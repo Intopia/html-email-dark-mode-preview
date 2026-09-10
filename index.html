@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTML email dark mode preview</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #191d21;
+    --muted: #5d6873;
+    --surface: #e7eaec;
+    --panel: #ffffff;
+    --rule: #ccd1d6;
+    --rule-strong: #9aa4ad;
+    --signal: #0f5c6e;
+    --signal-soft: #dcebee;
+    --notice-ink: #6f5410;
+    --notice-bg: #f8f0dc;
+    --notice-rule: #c9a63f;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--surface);
+  }
+
+  h1, h2, h3 { font-weight: 600; line-height: 1.25; margin: 0; }
+
+  a { color: var(--signal); }
+
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+
+  code, .mono { font-family: var(--mono); font-size: 0.86em; }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 16px;
+    padding: 14px 24px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--rule);
+  }
+  .masthead h1 { font-size: 17px; letter-spacing: -0.01em; }
+  .masthead p { margin: 0; font-size: 13px; color: var(--muted); }
+
+  .shell { max-width: 1560px; margin: 0 auto; padding: 24px; }
+
+  /* ---------- input screen ---------- */
+
+  .intake {
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 28px;
+  }
+  .intake h2 { font-size: 24px; letter-spacing: -0.015em; }
+  .intake .lede {
+    margin: 10px 0 24px;
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 62ch;
+  }
+  .intake label.field-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  #source {
+    width: 100%;
+    min-height: 220px;
+    resize: vertical;
+    padding: 12px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    background: #fbfcfc;
+    color: var(--ink);
+  }
+  .intake-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin-top: 18px;
+  }
+  .or {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  input[type="file"] { font-size: 14px; max-width: 100%; }
+  input[type="file"]::file-selector-button {
+    font: inherit;
+    padding: 7px 12px;
+    margin-right: 10px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    background: var(--panel);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 9px 20px;
+    border: 1px solid var(--signal);
+    border-radius: 2px;
+    background: var(--signal);
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn:hover { background: #0c4b5a; }
+  .btn-quiet {
+    background: var(--panel);
+    color: var(--ink);
+    border-color: var(--rule-strong);
+    font-weight: 500;
+    font-size: 14px;
+    padding: 7px 14px;
+  }
+  .btn-quiet:hover { background: #f2f4f5; }
+
+  .error {
+    margin-top: 16px;
+    padding: 10px 14px;
+    border-left: 3px solid #a33;
+    background: #fbeceb;
+    font-size: 14px;
+  }
+
+  /* ---------- results layout ---------- */
+
+  .workbench {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .findings {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 20px;
+  }
+  .findings > h2 {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .findings .sub {
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .finding {
+    border-top: 1px solid var(--rule);
+    padding: 14px 0;
+  }
+  .finding:last-of-type { padding-bottom: 0; }
+  .finding h3 {
+    font-size: 13.5px;
+    font-family: var(--mono);
+    font-weight: 600;
+    word-break: break-word;
+  }
+  .finding .state {
+    display: block;
+    margin-top: 5px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .finding .state b { color: var(--ink); font-weight: 600; }
+  .finding ul {
+    margin: 8px 0 0;
+    padding-left: 0;
+    list-style: none;
+  }
+  .finding li {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink);
+    padding: 3px 0 3px 10px;
+    border-left: 2px solid var(--rule);
+    word-break: break-word;
+  }
+  .finding .aside {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .colophon {
+    border-top: 1px solid var(--rule);
+    margin-top: 20px;
+    padding-top: 14px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .colophon h3 { font-size: 12.5px; color: var(--ink); margin-bottom: 4px; }
+  .colophon p { margin: 0 0 8px; }
+  .colophon p:last-child { margin-bottom: 0; }
+
+  /* ---------- stage ---------- */
+
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    background: #f7f8f9;
+  }
+
+  fieldset.group {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  fieldset.group legend {
+    float: left;
+    padding: 0;
+    font-size: 13px;
+    color: var(--muted);
+    margin-right: 10px;
+    line-height: 30px;
+  }
+  fieldset.group legend + * { clear: left; }
+
+  .segments { display: flex; }
+  .segments input { position: absolute; opacity: 0; pointer-events: none; }
+  .segments label {
+    font-size: 13.5px;
+    padding: 6px 13px;
+    border: 1px solid var(--rule-strong);
+    border-left-width: 0;
+    background: var(--panel);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .segments label:first-of-type { border-left-width: 1px; border-radius: 2px 0 0 2px; }
+  .segments label:last-of-type { border-radius: 0 2px 2px 0; }
+  .segments input:checked + label {
+    background: var(--signal-soft);
+    border-color: var(--signal);
+    color: var(--signal);
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 var(--signal);
+  }
+  .segments input:focus-visible + label {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+    position: relative;
+  }
+  .segments input:disabled + label {
+    color: #97a0a8;
+    background: #f2f4f5;
+    cursor: not-allowed;
+  }
+
+  .checkbox {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13.5px;
+  }
+  .checkbox input { width: 16px; height: 16px; margin: 0; accent-color: var(--signal); }
+
+  .spacer { margin-left: auto; }
+
+  .notice {
+    display: flex;
+    gap: 12px;
+    padding: 13px 16px;
+    background: var(--notice-bg);
+    border-bottom: 1px solid var(--notice-rule);
+    color: var(--notice-ink);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .notice p { margin: 0; max-width: 78ch; }
+  .notice strong { color: #4d3a08; }
+  .notice .bar {
+    flex: 0 0 3px;
+    background: var(--notice-rule);
+    border-radius: 2px;
+  }
+
+  .panes {
+    display: flex;
+    gap: 0;
+    background: #dfe3e6;
+    height: clamp(380px, 64vh, 940px);
+  }
+  .pane {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+  }
+  .pane + .pane { border-left: 1px solid var(--rule-strong); }
+  .pane[hidden] { display: none; }
+  .pane-label {
+    font-size: 12px;
+    padding: 5px 12px;
+    color: var(--muted);
+    background: #f7f8f9;
+    border-bottom: 1px solid var(--rule);
+  }
+  .frame-well {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+    background: #d9dee1;
+  }
+  iframe {
+    border: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    color-scheme: light;
+  }
+  .frame-well.w375 iframe { max-width: 375px; }
+  .frame-well.w600 iframe { max-width: 600px; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 1000px) {
+    .workbench { grid-template-columns: minmax(0, 1fr); }
+    .shell { padding: 16px; }
+    .panes { flex-direction: column; height: auto; }
+    .frame-well { height: 60vh; }
+    .pane + .pane { border-left: 0; border-top: 1px solid var(--rule-strong); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <h1>HTML email dark mode preview</h1>
+  <p>A viewer, not a test. Nothing here passes or fails.</p>
+</header>
+
+<main class="shell">
+
+  <!-- ============ INTAKE ============ -->
+  <section class="intake" id="intake">
+    <h2>Paste or upload an HTML email</h2>
+    <p class="lede">
+      This shows two things: what dark-mode support the email declares, and what the email's own
+      dark-mode CSS actually produces when it is switched on. It makes no claim about how any
+      particular email client will render it.
+    </p>
+
+    <label class="field-label" for="source">Email HTML</label>
+    <textarea id="source" spellcheck="false" placeholder="Paste the full email source here, including the &lt;head&gt; and any &lt;style&gt; block."></textarea>
+
+    <div class="intake-actions">
+      <button class="btn" id="run" type="button">Show preview</button>
+      <span class="or">or upload a file</span>
+      <input type="file" id="file" accept=".html,.htm,.txt,text/html,text/plain">
+    </div>
+
+    <div class="error" id="error" hidden></div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <div class="workbench" id="workbench" hidden>
+
+    <aside class="findings" id="findings">
+      <h2>What this email declares</h2>
+      <p class="sub">Reported independently. None of it is scored.</p>
+      <div id="finding-list"></div>
+
+      <div class="colophon">
+        <h3>About this preview</h3>
+        <p>
+          Scripts are blocked in the preview, which matches every email client. Remote images
+          will load, so tracking pixels in a real client's email may fire.
+        </p>
+        <p>
+          The dark view switches on the email's own <code>@media (prefers-color-scheme: dark)</code>
+          rules in place, leaving them exactly where the author put them in the cascade. No rules
+          are rewritten, moved or invented.
+        </p>
+        <p><button class="btn btn-quiet" id="restart" type="button">Load a different email</button></p>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="controls">
+        <fieldset class="group">
+          <legend>Showing</legend>
+          <div class="segments">
+            <input type="radio" name="view" id="view-light" value="light" checked>
+            <label for="view-light">As authored</label>
+            <input type="radio" name="view" id="view-dark" value="dark">
+            <label for="view-dark">With dark-mode CSS applied</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Width</legend>
+          <div class="segments">
+            <input type="radio" name="width" id="w-375" value="w375">
+            <label for="w-375">375</label>
+            <input type="radio" name="width" id="w-600" value="w600">
+            <label for="w-600">600</label>
+            <input type="radio" name="width" id="w-full" value="wfull" checked>
+            <label for="w-full">Full</label>
+          </div>
+        </fieldset>
+
+        <div class="checkbox spacer">
+          <input type="checkbox" id="compare">
+          <label for="compare">Compare side by side</label>
+        </div>
+      </div>
+
+      <div class="notice" id="notice" hidden>
+        <div class="bar" aria-hidden="true"></div>
+        <p id="notice-text"></p>
+      </div>
+
+      <div class="panes">
+        <div class="pane" id="pane-a">
+          <div class="pane-label" id="label-a">As authored</div>
+          <div class="frame-well" id="well-a">
+            <iframe id="frame-a" title="Email preview, as authored" sandbox="allow-same-origin"></iframe>
+          </div>
+        </div>
+        <div class="pane" id="pane-b" hidden>
+          <div class="pane-label">With dark-mode CSS applied</div>
+          <div class="frame-well" id="well-b">
+            <iframe id="frame-b" title="Email preview, with dark-mode CSS applied" sandbox="allow-same-origin"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="sr-only" id="announce" role="status" aria-live="polite"></p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var el = function (id) { return document.getElementById(id); };
+
+  var DARK_COND = /prefers-color-scheme\s*:\s*dark/i;
+  var DARK_COND_FULL = /\(\s*prefers-color-scheme\s*:\s*dark\s*\)/gi;
+
+  // Client-specific dark-mode hooks that are real declarations but can't be
+  // previewed in a browser, because the client injects the attribute itself.
+  var CLIENT_HOOKS = [
+    { test: /\[data-ogsc/i,      label: "[data-ogsc]",   note: "Outlook.com, text colour override" },
+    { test: /\[data-ogsb/i,      label: "[data-ogsb]",   note: "Outlook.com, background override" },
+    { test: /\[data-darkmode/i,  label: "[data-darkmode]", note: "client-injected attribute" },
+    { test: /\.dark-?mode\b/i,   label: ".dark-mode",    note: "class hook, applied by the client or a build step" },
+    { test: /\[data-color-?mode/i, label: "[data-color-mode]", note: "client-injected attribute" }
+  ];
+
+  var panes = {
+    a: { frame: el("frame-a"), well: el("well-a"), rules: [], forced: null },
+    b: { frame: el("frame-b"), well: el("well-b"), rules: [], forced: "dark" }
+  };
+
+  var lastSource = "";
+
+  /* ---------------------------------------------------------------
+     Rewrite a media condition so the dark part is switched on.
+     Works on the browser's own normalised conditionText, so there is
+     no regex parsing of raw CSS and no brace counting.
+  --------------------------------------------------------------- */
+  function flipCondition(mediaText) {
+    return mediaText.split(",").map(function (query) {
+      var q = query.trim();
+      if (!DARK_COND.test(q)) { return q; }
+      var t = q.replace(DARK_COND_FULL, "\u0000");
+      t = t.replace(/\s*\band\b\s*\u0000/gi, "");
+      t = t.replace(/\u0000\s*\band\b\s*/gi, "");
+      t = t.replace(/\u0000/g, "").trim();
+      return t || "all";
+    }).join(", ");
+  }
+
+  function walkRules(rules, visit) {
+    if (!rules) { return; }
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i];
+      visit(rule);
+      var kids = null;
+      try { kids = rule.cssRules; } catch (e) { kids = null; }
+      if (kids) { walkRules(kids, visit); }
+    }
+  }
+
+  function collect(doc) {
+    var found = {
+      darkBlocks: [],        // { rule, original, condition, count }
+      colorSchemeDecls: [],  // strings like ":root { color-scheme: light dark }"
+      clientHooks: {},       // label -> { note, count }
+      unreadableSheets: 0
+    };
+
+    var sheets = doc.styleSheets;
+    for (var s = 0; s < sheets.length; s++) {
+      var rules;
+      try { rules = sheets[s].cssRules; }
+      catch (e) { found.unreadableSheets++; continue; }
+
+      walkRules(rules, function (rule) {
+        // @media blocks mentioning prefers-color-scheme: dark
+        if (rule.media && typeof rule.media.mediaText === "string" && DARK_COND.test(rule.media.mediaText)) {
+          var count = 0;
+          try { count = rule.cssRules ? rule.cssRules.length : 0; } catch (e2) { count = 0; }
+          found.darkBlocks.push({
+            rule: rule,
+            original: rule.media.mediaText,
+            condition: rule.media.mediaText,
+            count: count
+          });
+        }
+
+        // color-scheme CSS property
+        if (rule.style && rule.style.colorScheme) {
+          found.colorSchemeDecls.push(
+            (rule.selectorText || "") + " { color-scheme: " + rule.style.colorScheme + " }"
+          );
+        }
+
+        // client-specific dark targeting
+        if (rule.selectorText) {
+          for (var h = 0; h < CLIENT_HOOKS.length; h++) {
+            var hook = CLIENT_HOOKS[h];
+            if (hook.test.test(rule.selectorText)) {
+              if (!found.clientHooks[hook.label]) {
+                found.clientHooks[hook.label] = { note: hook.note, count: 0 };
+              }
+              found.clientHooks[hook.label].count++;
+            }
+          }
+        }
+      });
+    }
+    return found;
+  }
+
+  function applyDark(pane, on) {
+    pane.rules.forEach(function (entry) {
+      try {
+        entry.rule.media.mediaText = on ? flipCondition(entry.original) : entry.original;
+      } catch (e) { /* some engines refuse the write; leave the rule alone */ }
+    });
+  }
+
+  /* ---------------------------------------------------------------
+     Findings panel
+  --------------------------------------------------------------- */
+  function esc(str) {
+    return String(str).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function finding(title, stateHTML, listItems, aside) {
+    var html = '<div class="finding"><h3>' + esc(title) + "</h3>";
+    html += '<span class="state">' + stateHTML + "</span>";
+    if (listItems && listItems.length) {
+      html += "<ul>";
+      listItems.forEach(function (item) { html += "<li>" + esc(item) + "</li>"; });
+      html += "</ul>";
+    }
+    if (aside) { html += '<p class="aside">' + aside + "</p>"; }
+    return html + "</div>";
+  }
+
+  function renderFindings(metaScheme, metaSupported, found) {
+    var out = "";
+
+    out += finding(
+      '<meta name="color-scheme">',
+      metaScheme !== null
+        ? 'Found, content <b>' + esc(metaScheme || "(empty)") + "</b>"
+        : "Not found",
+      null,
+      null
+    );
+
+    out += finding(
+      '<meta name="supported-color-schemes">',
+      metaSupported !== null
+        ? 'Found, content <b>' + esc(metaSupported || "(empty)") + "</b>"
+        : "Not found",
+      null,
+      "Both meta tags speak to email clients' own auto-dark systems. Neither changes anything you see here."
+    );
+
+    out += finding(
+      "color-scheme CSS property",
+      found.colorSchemeDecls.length
+        ? "Found in <b>" + found.colorSchemeDecls.length + "</b> rule" + (found.colorSchemeDecls.length === 1 ? "" : "s")
+        : "Not found",
+      found.colorSchemeDecls.slice(0, 6),
+      null
+    );
+
+    var blocks = found.darkBlocks;
+    var ruleCount = blocks.reduce(function (n, b) { return n + b.count; }, 0);
+    out += finding(
+      "@media (prefers-color-scheme: dark)",
+      blocks.length
+        ? "Found <b>" + blocks.length + "</b> block" + (blocks.length === 1 ? "" : "s") +
+          ", <b>" + ruleCount + "</b> rule" + (ruleCount === 1 ? "" : "s") + " inside"
+        : "Not found",
+      blocks.map(function (b) { return "@media " + b.condition; }),
+      blocks.length ? "This is the only thing that changes the dark view." : null
+    );
+
+    var hookLabels = Object.keys(found.clientHooks);
+    out += finding(
+      "Client-specific dark targeting",
+      hookLabels.length
+        ? "Found <b>" + hookLabels.length + "</b> kind" + (hookLabels.length === 1 ? "" : "s")
+        : "Not found",
+      hookLabels.map(function (k) {
+        var h = found.clientHooks[k];
+        return k + "  " + h.count + " rule" + (h.count === 1 ? "" : "s") + ", " + h.note;
+      }),
+      hookLabels.length
+        ? "Declared, but not previewable here. These depend on the client injecting an attribute the browser never adds, so treat this as dark-mode work that exists even though the dark view will not show it."
+        : null
+    );
+
+    if (found.unreadableSheets) {
+      out += finding(
+        "Stylesheets that could not be read",
+        "<b>" + found.unreadableSheets + "</b>",
+        null,
+        "Almost certainly an external <code>&lt;link&gt;</code>. Real email clients strip those, so this is worth noting in its own right."
+      );
+    }
+
+    el("finding-list").innerHTML = out;
+  }
+
+  /* ---------------------------------------------------------------
+     Wiring
+  --------------------------------------------------------------- */
+  function currentWidthClass() {
+    var checked = document.querySelector('input[name="width"]:checked');
+    return checked ? checked.value : "wfull";
+  }
+
+  function setWidth() {
+    var cls = currentWidthClass();
+    [panes.a.well, panes.b.well].forEach(function (well) {
+      well.className = "frame-well" + (cls === "wfull" ? "" : " " + cls);
+    });
+  }
+
+  function setView(mode) {
+    if (panes.a.rules.length === 0 && mode === "dark") { return; }
+    applyDark(panes.a, mode === "dark");
+    el("label-a").textContent = mode === "dark" ? "With dark-mode CSS applied" : "As authored";
+    el("announce").textContent = mode === "dark"
+      ? "Showing the email with its dark-mode CSS applied."
+      : "Showing the email as authored.";
+  }
+
+  function setCompare(on) {
+    el("pane-b").hidden = !on;
+    var darkRadio = el("view-dark");
+    var lightRadio = el("view-light");
+    darkRadio.disabled = on;
+    lightRadio.disabled = on;
+    if (on) {
+      lightRadio.checked = true;
+      applyDark(panes.a, false);
+      el("label-a").textContent = "As authored";
+      el("announce").textContent = "Showing both views side by side.";
+    } else {
+      setView(document.querySelector('input[name="view"]:checked').value);
+    }
+  }
+
+  function loadPane(pane, html, onReady) {
+    pane.rules = [];
+    pane.frame.onload = function () {
+      var doc = pane.frame.contentDocument;
+      var found = null;
+      if (doc) {
+        found = collect(doc);
+        pane.rules = found.darkBlocks;
+        if (pane.forced === "dark") { applyDark(pane, true); }
+      }
+      if (onReady) { onReady(found); }
+    };
+    pane.frame.srcdoc = html;
+  }
+
+  function run(html) {
+    var trimmed = html.trim();
+    if (!trimmed) {
+      el("error").hidden = false;
+      el("error").textContent = "There's no HTML to preview. Paste the email source or choose a file.";
+      return;
+    }
+    el("error").hidden = true;
+    lastSource = trimmed;
+
+    // Meta tags come from the raw source, before the browser has a chance to
+    // move anything around.
+    var parsed = new DOMParser().parseFromString(trimmed, "text/html");
+    var m1 = parsed.querySelector('meta[name="color-scheme" i]');
+    var m2 = parsed.querySelector('meta[name="supported-color-schemes" i]');
+    var metaScheme = m1 ? m1.getAttribute("content") : null;
+    var metaSupported = m2 ? m2.getAttribute("content") : null;
+
+    el("intake").hidden = true;
+    el("workbench").hidden = false;
+
+    el("view-light").checked = true;
+    el("compare").checked = false;
+    el("pane-b").hidden = true;
+    el("view-dark").disabled = false;
+    el("view-light").disabled = false;
+    el("label-a").textContent = "As authored";
+    setWidth();
+
+    loadPane(panes.a, trimmed, function (found) {
+      if (!found) {
+        el("error").hidden = false;
+        el("error").textContent = "The preview could not be read. Try reloading the page.";
+        return;
+      }
+      renderFindings(metaScheme, metaSupported, found);
+
+      var hasDark = found.darkBlocks.length > 0;
+      el("view-dark").disabled = !hasDark;
+      el("compare").disabled = !hasDark;
+      el("notice").hidden = hasDark;
+
+      if (!hasDark) {
+        el("notice-text").innerHTML =
+          "<strong>No dark-mode CSS found.</strong> There is nothing to apply, so this shows the " +
+          "email exactly as authored. Real email clients may still auto-darken it in ways this " +
+          "tool cannot predict or replicate, and none of them share a common, documented approach.";
+      } else {
+        loadPane(panes.b, trimmed, null);
+      }
+    });
+  }
+
+  el("run").addEventListener("click", function () { run(el("source").value); });
+
+  el("file").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) { return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      el("source").value = reader.result;
+      run(reader.result);
+    };
+    reader.onerror = function () {
+      el("error").hidden = false;
+      el("error").textContent = "That file could not be read. Try pasting the source instead.";
+    };
+    reader.readAsText(file);
+  });
+
+  el("restart").addEventListener("click", function () {
+    el("workbench").hidden = true;
+    el("intake").hidden = false;
+    el("file").value = "";
+    el("source").focus();
+  });
+
+  document.querySelectorAll('input[name="view"]').forEach(function (r) {
+    r.addEventListener("change", function () { setView(r.value); });
+  });
+
+  document.querySelectorAll('input[name="width"]').forEach(function (r) {
+    r.addEventListener("change", setWidth);
+  });
+
+  el("compare").addEventListener("change", function () { setCompare(el("compare").checked); });
+
+  el("source").addEventListener("keydown", function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { run(el("source").value); }
+  });
+})();
+</script>
+</body>
+</html>
