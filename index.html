@@ -3,495 +3,592 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HTML email dark mode preview</title>
+<title>HTML email dark mode preview - Intopia</title>
+<link rel="shortcut icon" href="https://intopia.digital/wp-content/uploads/2017/06/cropped-Intopia_FINAL_icon-32x32.png" sizes="32x32">
 <style>
-  :root {
-    color-scheme: light;
-    --ink: #191d21;
-    --muted: #5d6873;
-    --surface: #e7eaec;
-    --panel: #ffffff;
-    --rule: #ccd1d6;
-    --rule-strong: #9aa4ad;
-    --signal: #0f5c6e;
-    --signal-soft: #dcebee;
-    --notice-ink: #6f5410;
-    --notice-bg: #f8f0dc;
-    --notice-rule: #c9a63f;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-  * { box-sizing: border-box; }
+:root {
+  color-scheme: light;
+  --ink: #16233d;
+  --ink-soft: #4a5875;
+  --paper: #efefef;
+  --panel: #ffffff;
+  --line: #d9d2be;
+  --border-strong: #dddddd;
+  --red: #a5322a;
+  --red-bg: #fbeae7;
+  --green: #29614a;
+  --green-bg: #e9f2ec;
+  --amber: #93641a;
+  --amber-bg: #faf1dc;
+  --neutral: #5b6472;
+  --neutral-bg: #f4f3ef;
+  --info: #29506b;
+  --info-bg: #e6eef3;
+  --focus: #1b4fbf;
+  --brand: #c03c0c;
+  --font-brand: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, Frutiger, 'Frutiger Linotype', Univers, Calibri, 'Gill Sans', 'Gill Sans MT', 'Myriad Pro', Myriad, 'DejaVu Sans Condensed', 'Liberation Sans', 'Nimbus Sans L', Tahoma, Geneva, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --radius: 4px;
+}
 
-  body {
-    margin: 0;
-    font-family: var(--sans);
-    font-size: 16px;
-    line-height: 1.5;
-    color: var(--ink);
-    background: var(--surface);
-  }
+* { box-sizing: border-box; }
 
-  h1, h2, h3 { font-weight: 600; line-height: 1.25; margin: 0; }
+/* Author display rules beat the UA stylesheet's [hidden] { display: none },
+   so anything toggled with .hidden needs this to actually disappear. */
+[hidden] { display: none !important; }
 
-  a { color: var(--signal); }
+html { font-size: 100%; }
 
-  :focus-visible {
-    outline: 2px solid var(--signal);
-    outline-offset: 2px;
-  }
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+}
 
-  code, .mono { font-family: var(--mono); font-size: 0.86em; }
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+h2, h3 { font-family: var(--font-display); color: var(--ink); }
 
-  /* ---------- masthead ---------- */
+a { color: var(--info); }
+a:hover { color: var(--ink); }
 
-  .masthead {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 16px;
-    padding: 14px 24px;
-    background: var(--panel);
-    border-bottom: 1px solid var(--rule);
-  }
-  .masthead h1 { font-size: 17px; letter-spacing: -0.01em; }
-  .masthead p { margin: 0; font-size: 13px; color: var(--muted); }
+:focus { outline: 3px solid var(--focus); outline-offset: 2px; }
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
-  .shell { max-width: 1560px; margin: 0 auto; padding: 24px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.9em; }
 
-  /* ---------- input screen ---------- */
+.page {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 32px 24px 56px;
+}
 
-  .intake {
-    max-width: 760px;
-    margin: 0 auto;
-    background: var(--panel);
-    border: 1px solid var(--rule);
-    border-radius: 3px;
-    padding: 28px;
-  }
-  .intake h2 { font-size: 24px; letter-spacing: -0.015em; }
-  .intake .lede {
-    margin: 10px 0 24px;
-    color: var(--muted);
-    font-size: 15px;
-    max-width: 62ch;
-  }
-  .intake label.field-label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-  #source {
-    width: 100%;
-    min-height: 220px;
-    resize: vertical;
-    padding: 12px;
-    border: 1px solid var(--rule-strong);
-    border-radius: 2px;
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 1.55;
-    background: #fbfcfc;
-    color: var(--ink);
-  }
-  .intake-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-    margin-top: 18px;
-  }
-  .or {
-    font-size: 14px;
-    color: var(--muted);
-  }
-  input[type="file"] { font-size: 14px; max-width: 100%; }
-  input[type="file"]::file-selector-button {
-    font: inherit;
-    padding: 7px 12px;
-    margin-right: 10px;
-    border: 1px solid var(--rule-strong);
-    border-radius: 2px;
-    background: var(--panel);
-    color: var(--ink);
-    cursor: pointer;
-  }
+/* ---------- brand header ---------- */
 
-  .btn {
-    font: inherit;
-    font-weight: 600;
-    font-size: 15px;
-    padding: 9px 20px;
-    border: 1px solid var(--signal);
-    border-radius: 2px;
-    background: var(--signal);
-    color: #fff;
-    cursor: pointer;
-  }
-  .btn:hover { background: #0c4b5a; }
-  .btn-quiet {
-    background: var(--panel);
-    color: var(--ink);
-    border-color: var(--rule-strong);
-    font-weight: 500;
-    font-size: 14px;
-    padding: 7px 14px;
-  }
-  .btn-quiet:hover { background: #f2f4f5; }
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+.intopia-logo { width: 180px; height: auto; }
+.brand-text h1 {
+  font-family: var(--font-brand);
+  color: var(--brand);
+  font-size: 2.4rem;
+  font-weight: 600;
+  margin: 0;
+}
 
-  .error {
-    margin-top: 16px;
-    padding: 10px 14px;
-    border-left: 3px solid #a33;
-    background: #fbeceb;
-    font-size: 14px;
-  }
+.lede {
+  margin: 16px 0 0;
+  max-width: 70ch;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+.trust {
+  margin: 10px 0 0;
+  max-width: 70ch;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
 
-  /* ---------- results layout ---------- */
+.masthead-block { margin-bottom: 32px; }
 
-  .workbench {
-    display: grid;
-    grid-template-columns: 340px minmax(0, 1fr);
-    gap: 24px;
-    align-items: start;
-  }
+/* ---------- shared panel ---------- */
 
-  .findings {
-    background: var(--panel);
-    border: 1px solid var(--rule);
-    border-radius: 3px;
-    padding: 20px;
-  }
-  .findings > h2 {
-    font-size: 15px;
-    margin-bottom: 4px;
-  }
-  .findings .sub {
-    margin: 0 0 18px;
-    font-size: 13px;
-    color: var(--muted);
-  }
+.panel {
+  background: var(--panel);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+}
 
-  .finding {
-    border-top: 1px solid var(--rule);
-    padding: 14px 0;
-  }
-  .finding:last-of-type { padding-bottom: 0; }
-  .finding h3 {
-    font-size: 13.5px;
-    font-family: var(--mono);
-    font-weight: 600;
-    word-break: break-word;
-  }
-  .finding .state {
-    display: block;
-    margin-top: 5px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .finding .state b { color: var(--ink); font-weight: 600; }
-  .finding ul {
-    margin: 8px 0 0;
-    padding-left: 0;
-    list-style: none;
-  }
-  .finding li {
-    font-family: var(--mono);
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--ink);
-    padding: 3px 0 3px 10px;
-    border-left: 2px solid var(--rule);
-    word-break: break-word;
-  }
-  .finding .aside {
-    margin: 10px 0 0;
-    font-size: 12.5px;
-    line-height: 1.5;
-    color: var(--muted);
-  }
+/* ---------- buttons ---------- */
 
-  .colophon {
-    border-top: 1px solid var(--rule);
-    margin-top: 20px;
-    padding-top: 14px;
-    font-size: 12.5px;
-    line-height: 1.55;
-    color: var(--muted);
-  }
-  .colophon h3 { font-size: 12.5px; color: var(--ink); margin-bottom: 4px; }
-  .colophon p { margin: 0 0 8px; }
-  .colophon p:last-child { margin-bottom: 0; }
+button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 12px 22px;
+}
+.btn-primary {
+  background: var(--brand);
+  color: #ffffff;
+  border: 2px solid var(--brand);
+}
+.btn-primary:hover { background: #a2330a; border-color: #a2330a; }
 
-  /* ---------- stage ---------- */
+/* ---------- intake ---------- */
 
-  .stage {
-    background: var(--panel);
-    border: 1px solid var(--rule);
-    border-radius: 3px;
-    overflow: hidden;
-  }
+#intake {
+  max-width: 860px;
+  padding: 28px;
+}
+#intake h2 { font-size: 1.5rem; margin-bottom: 8px; }
+#intake .intake-help {
+  margin: 0 0 22px;
+  max-width: 66ch;
+  color: var(--ink-soft);
+}
 
-  .controls {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px 22px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--rule);
-    background: #f7f8f9;
-  }
+.field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+#source {
+  width: 100%;
+  min-height: 240px;
+  resize: vertical;
+  padding: 12px;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  background: var(--panel);
+  color: var(--ink);
+}
 
-  fieldset.group {
-    border: 0;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  fieldset.group legend {
-    float: left;
-    padding: 0;
-    font-size: 13px;
-    color: var(--muted);
-    margin-right: 10px;
-    line-height: 30px;
-  }
-  fieldset.group legend + * { clear: left; }
+.intake-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  margin-top: 20px;
+}
+.or { color: var(--ink-soft); }
+input[type="file"] { font-family: var(--font-body); font-size: 1rem; max-width: 100%; }
+input[type="file"]::file-selector-button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 10px 16px;
+  margin-right: 12px;
+  border: 2px solid var(--brand);
+  border-radius: var(--radius);
+  background: var(--brand);
+  color: #ffffff;
+  cursor: pointer;
+}
 
-  .segments { display: flex; }
-  .segments input { position: absolute; opacity: 0; pointer-events: none; }
-  .segments label {
-    font-size: 13.5px;
-    padding: 6px 13px;
-    border: 1px solid var(--rule-strong);
-    border-left-width: 0;
-    background: var(--panel);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .segments label:first-of-type { border-left-width: 1px; border-radius: 2px 0 0 2px; }
-  .segments label:last-of-type { border-radius: 0 2px 2px 0; }
-  .segments input:checked + label {
-    background: var(--signal-soft);
-    border-color: var(--signal);
-    color: var(--signal);
-    font-weight: 600;
-    box-shadow: inset 0 -2px 0 var(--signal);
-  }
-  .segments input:focus-visible + label {
-    outline: 2px solid var(--signal);
-    outline-offset: 2px;
-    position: relative;
-  }
-  .segments input:disabled + label {
-    color: #97a0a8;
-    background: #f2f4f5;
-    cursor: not-allowed;
-  }
+.file-status {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  background: var(--info-bg);
+  border-left: 3px solid var(--info);
+  border-radius: 2px;
+  font-size: 1rem;
+  color: var(--ink);
+  max-width: 66ch;
+}
 
-  .checkbox {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 13.5px;
-  }
-  .checkbox input { width: 16px; height: 16px; margin: 0; accent-color: var(--signal); }
+.error {
+  margin-top: 20px;
+  padding: 12px 14px;
+  background: var(--red-bg);
+  border-left: 3px solid var(--red);
+  border-radius: 2px;
+  color: var(--ink);
+}
 
-  .spacer { margin-left: auto; }
+/* ---------- workbar ---------- */
 
-  .notice {
-    display: flex;
-    gap: 12px;
-    padding: 13px 16px;
-    background: var(--notice-bg);
-    border-bottom: 1px solid var(--notice-rule);
-    color: var(--notice-ink);
-    font-size: 13.5px;
-    line-height: 1.5;
-  }
-  .notice p { margin: 0; max-width: 78ch; }
-  .notice strong { color: #4d3a08; }
-  .notice .bar {
-    flex: 0 0 3px;
-    background: var(--notice-rule);
-    border-radius: 2px;
-  }
+.workbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 20px;
+}
+.workbar h2 { font-size: 1.5rem; }
+/* Focus is moved here programmatically after submission, which does not match
+   :focus-visible, so the global ring would be stripped. Put it back. */
+.workbar h2:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+.workbar p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+.workbar p b {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.workbar button { margin-left: auto; }
 
-  .panes {
-    display: flex;
-    gap: 0;
-    background: #dfe3e6;
-    height: clamp(380px, 64vh, 940px);
-  }
-  .pane {
-    flex: 1 1 0;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    background: var(--panel);
-  }
-  .pane + .pane { border-left: 1px solid var(--rule-strong); }
-  .pane[hidden] { display: none; }
-  .pane-label {
-    font-size: 12px;
-    padding: 5px 12px;
-    color: var(--muted);
-    background: #f7f8f9;
-    border-bottom: 1px solid var(--rule);
-  }
-  .frame-well {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    justify-content: center;
-    overflow: auto;
-    background: #d9dee1;
-  }
-  iframe {
-    border: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    background: #fff;
-    color-scheme: light;
-  }
-  .frame-well.w375 iframe { max-width: 375px; }
-  .frame-well.w600 iframe { max-width: 600px; }
+/* ---------- results grid ---------- */
 
-  .sr-only {
-    position: absolute;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
-  }
+.workbench {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
 
-  @media (max-width: 1000px) {
-    .workbench { grid-template-columns: minmax(0, 1fr); }
-    .shell { padding: 16px; }
-    .panes { flex-direction: column; height: auto; }
-    .frame-well { height: 60vh; }
-    .pane + .pane { border-left: 0; border-top: 1px solid var(--rule-strong); }
-  }
+/* ---------- findings ---------- */
 
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; }
-  }
+.findings { padding: 24px; }
+.findings > h2 { font-size: 1.25rem; margin-bottom: 6px; }
+.findings .sub {
+  margin: 0 0 20px;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.finding {
+  border-top: 2px solid var(--border-strong);
+  padding: 16px 0;
+}
+.finding:last-of-type { padding-bottom: 4px; }
+.finding h3 {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 500;
+  word-break: break-word;
+}
+.finding .state {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+.finding .state b { color: var(--ink); font-weight: 600; }
+.finding ul {
+  margin: 10px 0 0;
+  padding-left: 0;
+  list-style: none;
+}
+.finding li {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink);
+  padding: 4px 0 4px 12px;
+  border-left: 3px solid var(--line);
+  word-break: break-word;
+}
+.finding .aside {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.colophon {
+  border-top: 2px solid var(--border-strong);
+  margin-top: 20px;
+  padding-top: 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.colophon h3 { font-size: 0.95rem; margin-bottom: 6px; }
+.colophon p { margin: 0 0 10px; }
+.colophon p:last-child { margin-bottom: 0; }
+
+/* ---------- stage ---------- */
+
+.stage { overflow: hidden; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 28px;
+  padding: 16px 20px;
+  border-bottom: 2px solid var(--border-strong);
+  background: var(--neutral-bg);
+}
+
+fieldset.group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+fieldset.group legend {
+  float: left;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-right: 12px;
+  line-height: 38px;
+}
+fieldset.group legend + * { clear: left; }
+
+.segments { display: flex; }
+.segments input { position: absolute; opacity: 0; pointer-events: none; }
+.segments label {
+  font-size: 0.95rem;
+  padding: 8px 15px;
+  border: 2px solid var(--border-strong);
+  border-left-width: 0;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.segments label:first-of-type { border-left-width: 2px; border-radius: var(--radius) 0 0 var(--radius); }
+.segments label:last-of-type { border-radius: 0 var(--radius) var(--radius) 0; }
+.segments input:checked + label {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #ffffff;
+  font-weight: 600;
+}
+.segments input:focus-visible + label {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  position: relative;
+}
+.segments input:disabled + label {
+  color: var(--neutral);
+  background: var(--neutral-bg);
+  cursor: not-allowed;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.95rem;
+}
+.checkbox input { width: 18px; height: 18px; margin: 0; accent-color: var(--ink); }
+.checkbox input:disabled + label { color: var(--neutral); }
+
+.spacer { margin-left: auto; }
+
+/* ---------- the callout ---------- */
+
+.dark-mode-callout {
+  margin: 16px 20px;
+  padding: 12px 14px;
+  background: var(--amber-bg);
+  border-left: 3px solid var(--amber);
+  border-radius: 2px;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.dark-mode-callout p { margin: 0; max-width: 76ch; }
+
+/* ---------- panes ---------- */
+
+.panes {
+  display: flex;
+  background: var(--border-strong);
+  height: clamp(400px, 64vh, 940px);
+}
+.pane {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+}
+.pane + .pane { border-left: 2px solid var(--border-strong); }
+.pane-label {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  color: var(--ink);
+  background: var(--neutral-bg);
+  border-bottom: 2px solid var(--border-strong);
+}
+.frame-well {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+  background: #cfcfcf;
+}
+iframe {
+  border: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  color-scheme: light;
+}
+.frame-well.w375 iframe { max-width: 375px; }
+.frame-well.w600 iframe { max-width: 600px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1080px) {
+  .workbench { grid-template-columns: minmax(0, 1fr); }
+  .page { padding: 24px 16px 40px; }
+  .panes { flex-direction: column; height: auto; }
+  .frame-well { height: 60vh; }
+  .pane + .pane { border-left: 0; border-top: 2px solid var(--border-strong); }
+  .brand-text h1 { font-size: 2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
 </style>
 </head>
 <body>
 
-<header class="masthead">
-  <h1>HTML email dark mode preview</h1>
-  <p>A viewer, not a test. Nothing here passes or fails.</p>
-</header>
+<div class="page">
 
-<main class="shell">
+  <div class="masthead-block">
+    <header class="brand">
+      <img src="https://intopia.digital/wp-content/themes/intopia-refresh/assets/images/intopia.png" alt="Intopia logo" class="intopia-logo">
+      <div class="brand-text">
+        <h1>HTML email dark mode preview</h1>
+      </div>
+    </header>
 
-  <!-- ============ INTAKE ============ -->
-  <section class="intake" id="intake">
-    <h2>Paste or upload an HTML email</h2>
     <p class="lede">
-      This shows two things: what dark-mode support the email declares, and what the email's own
-      dark-mode CSS actually produces when it is switched on. It makes no claim about how any
-      particular email client will render it.
+      Shows what dark-mode support an HTML email declares, and what the email's own dark-mode CSS
+      actually produces when it is switched on. This is a viewer, not a test. Nothing here passes
+      or fails, and it makes no claim about how any particular email client will render the email.
     </p>
-
-    <label class="field-label" for="source">Email HTML</label>
-    <textarea id="source" spellcheck="false" placeholder="Paste the full email source here, including the &lt;head&gt; and any &lt;style&gt; block."></textarea>
-
-    <div class="intake-actions">
-      <button class="btn" id="run" type="button">Show preview</button>
-      <span class="or">or upload a file</span>
-      <input type="file" id="file" accept=".html,.htm,.txt,text/html,text/plain">
-    </div>
-
-    <div class="error" id="error" hidden></div>
-  </section>
-
-  <!-- ============ RESULTS ============ -->
-  <div class="workbench" id="workbench" hidden>
-
-    <aside class="findings" id="findings">
-      <h2>What this email declares</h2>
-      <p class="sub">Reported independently. None of it is scored.</p>
-      <div id="finding-list"></div>
-
-      <div class="colophon">
-        <h3>About this preview</h3>
-        <p>
-          Scripts are blocked in the preview, which matches every email client. Remote images
-          will load, so tracking pixels in a real client's email may fire.
-        </p>
-        <p>
-          The dark view switches on the email's own <code>@media (prefers-color-scheme: dark)</code>
-          rules in place, leaving them exactly where the author put them in the cascade. No rules
-          are rewritten, moved or invented.
-        </p>
-        <p><button class="btn btn-quiet" id="restart" type="button">Load a different email</button></p>
-      </div>
-    </aside>
-
-    <section class="stage">
-      <div class="controls">
-        <fieldset class="group">
-          <legend>Showing</legend>
-          <div class="segments">
-            <input type="radio" name="view" id="view-light" value="light" checked>
-            <label for="view-light">As authored</label>
-            <input type="radio" name="view" id="view-dark" value="dark">
-            <label for="view-dark">With dark-mode CSS applied</label>
-          </div>
-        </fieldset>
-
-        <fieldset class="group">
-          <legend>Width</legend>
-          <div class="segments">
-            <input type="radio" name="width" id="w-375" value="w375">
-            <label for="w-375">375</label>
-            <input type="radio" name="width" id="w-600" value="w600">
-            <label for="w-600">600</label>
-            <input type="radio" name="width" id="w-full" value="wfull" checked>
-            <label for="w-full">Full</label>
-          </div>
-        </fieldset>
-
-        <div class="checkbox spacer">
-          <input type="checkbox" id="compare">
-          <label for="compare">Compare side by side</label>
-        </div>
-      </div>
-
-      <div class="notice" id="notice" hidden>
-        <div class="bar" aria-hidden="true"></div>
-        <p id="notice-text"></p>
-      </div>
-
-      <div class="panes">
-        <div class="pane" id="pane-a">
-          <div class="pane-label" id="label-a">As authored</div>
-          <div class="frame-well" id="well-a">
-            <iframe id="frame-a" title="Email preview, as authored" sandbox="allow-same-origin"></iframe>
-          </div>
-        </div>
-        <div class="pane" id="pane-b" hidden>
-          <div class="pane-label">With dark-mode CSS applied</div>
-          <div class="frame-well" id="well-b">
-            <iframe id="frame-b" title="Email preview, with dark-mode CSS applied" sandbox="allow-same-origin"></iframe>
-          </div>
-        </div>
-      </div>
-    </section>
+    <p class="trust">
+      Nothing you paste or upload here is sent anywhere. This preview runs entirely in your browser.
+    </p>
   </div>
 
+  <main>
+
+    <!-- ============ INTAKE ============ -->
+    <section class="panel" id="intake">
+      <h2>Paste or upload an HTML email</h2>
+      <p class="intake-help">
+        Include the full source if you can, with the <code>&lt;head&gt;</code> and any
+        <code>&lt;style&gt;</code> block, since that is where dark-mode CSS lives.
+      </p>
+
+      <label class="field-label" for="source">Email HTML</label>
+      <textarea id="source" spellcheck="false"></textarea>
+
+      <div class="intake-actions">
+        <button class="btn-primary" id="run" type="button">Show preview</button>
+        <span class="or">or upload a file</span>
+        <input type="file" id="file" accept=".html,.htm,.txt,text/html,text/plain">
+      </div>
+
+      <p class="file-status" id="file-status" role="status" hidden></p>
+
+      <div class="error" id="error" hidden></div>
+    </section>
+
+    <!-- ============ RESULTS ============ -->
+    <div id="results" hidden>
+
+      <div class="workbar">
+        <h2 id="results-heading" tabindex="-1">Preview</h2>
+        <p>Showing <b id="source-name">pasted HTML</b></p>
+        <button class="btn-primary" id="restart" type="button">Load a different email</button>
+      </div>
+
+      <div class="workbench">
+
+        <aside class="panel findings">
+          <h2>What this email declares</h2>
+          <p class="sub">Reported independently. None of it is scored.</p>
+          <div id="finding-list"></div>
+
+          <div class="colophon">
+            <h3>About this preview</h3>
+            <p>
+              Scripts are blocked in the preview, which matches every email client. Remote images
+              will load, so tracking pixels in a real email may fire.
+            </p>
+            <p>
+              The dark view switches on the email's own
+              <code>@media (prefers-color-scheme: dark)</code> rules in place, leaving them exactly
+              where the author put them in the cascade. No rules are rewritten, moved or invented.
+            </p>
+          </div>
+        </aside>
+
+        <section class="panel stage">
+          <div class="controls">
+            <fieldset class="group">
+              <legend>Showing</legend>
+              <div class="segments">
+                <input type="radio" name="view" id="view-light" value="light" checked>
+                <label for="view-light">As authored</label>
+                <input type="radio" name="view" id="view-dark" value="dark">
+                <label for="view-dark">With dark-mode CSS applied</label>
+              </div>
+            </fieldset>
+
+            <fieldset class="group">
+              <legend>Width</legend>
+              <div class="segments">
+                <input type="radio" name="width" id="w-375" value="w375">
+                <label for="w-375">375</label>
+                <input type="radio" name="width" id="w-600" value="w600">
+                <label for="w-600">600</label>
+                <input type="radio" name="width" id="w-full" value="wfull" checked>
+                <label for="w-full">Full</label>
+              </div>
+            </fieldset>
+
+            <div class="checkbox spacer">
+              <input type="checkbox" id="compare">
+              <label for="compare">Compare side by side</label>
+            </div>
+          </div>
+
+          <div class="dark-mode-callout" id="notice" hidden>
+            <p id="notice-text"></p>
+          </div>
+
+          <div class="panes">
+            <div class="pane" id="pane-a">
+              <div class="pane-label" id="label-a">As authored</div>
+              <div class="frame-well" id="well-a">
+                <iframe id="frame-a" title="Email preview, as authored" sandbox="allow-same-origin"></iframe>
+              </div>
+            </div>
+            <div class="pane" id="pane-b" hidden>
+              <div class="pane-label">With dark-mode CSS applied</div>
+              <div class="frame-well" id="well-b">
+                <iframe id="frame-b" title="Email preview, with dark-mode CSS applied" sandbox="allow-same-origin"></iframe>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+  </main>
+
   <p class="sr-only" id="announce" role="status" aria-live="polite"></p>
-</main>
+
+</div>
 
 <script>
 (function () {
@@ -505,10 +602,10 @@
   // Client-specific dark-mode hooks that are real declarations but can't be
   // previewed in a browser, because the client injects the attribute itself.
   var CLIENT_HOOKS = [
-    { test: /\[data-ogsc/i,      label: "[data-ogsc]",   note: "Outlook.com, text colour override" },
-    { test: /\[data-ogsb/i,      label: "[data-ogsb]",   note: "Outlook.com, background override" },
-    { test: /\[data-darkmode/i,  label: "[data-darkmode]", note: "client-injected attribute" },
-    { test: /\.dark-?mode\b/i,   label: ".dark-mode",    note: "class hook, applied by the client or a build step" },
+    { test: /\[data-ogsc/i,        label: "[data-ogsc]",       note: "Outlook.com, text colour override" },
+    { test: /\[data-ogsb/i,        label: "[data-ogsb]",       note: "Outlook.com, background override" },
+    { test: /\[data-darkmode/i,    label: "[data-darkmode]",   note: "client-injected attribute" },
+    { test: /\.dark-?mode\b/i,     label: ".dark-mode",        note: "class hook, applied by the client or a build step" },
     { test: /\[data-color-?mode/i, label: "[data-color-mode]", note: "client-injected attribute" }
   ];
 
@@ -517,7 +614,8 @@
     b: { frame: el("frame-b"), well: el("well-b"), rules: [], forced: "dark" }
   };
 
-  var lastSource = "";
+  var sourceName = "pasted HTML";
+  var loadedFileText = null;
 
   /* ---------------------------------------------------------------
      Rewrite a media condition so the dark part is switched on.
@@ -549,9 +647,9 @@
 
   function collect(doc) {
     var found = {
-      darkBlocks: [],        // { rule, original, condition, count }
-      colorSchemeDecls: [],  // strings like ":root { color-scheme: light dark }"
-      clientHooks: {},       // label -> { note, count }
+      darkBlocks: [],
+      colorSchemeDecls: [],
+      clientHooks: {},
       unreadableSheets: 0
     };
 
@@ -562,7 +660,6 @@
       catch (e) { found.unreadableSheets++; continue; }
 
       walkRules(rules, function (rule) {
-        // @media blocks mentioning prefers-color-scheme: dark
         if (rule.media && typeof rule.media.mediaText === "string" && DARK_COND.test(rule.media.mediaText)) {
           var count = 0;
           try { count = rule.cssRules ? rule.cssRules.length : 0; } catch (e2) { count = 0; }
@@ -574,14 +671,12 @@
           });
         }
 
-        // color-scheme CSS property
         if (rule.style && rule.style.colorScheme) {
           found.colorSchemeDecls.push(
             (rule.selectorText || "") + " { color-scheme: " + rule.style.colorScheme + " }"
           );
         }
 
-        // client-specific dark targeting
         if (rule.selectorText) {
           for (var h = 0; h < CLIENT_HOOKS.length; h++) {
             var hook = CLIENT_HOOKS[h];
@@ -633,7 +728,7 @@
     out += finding(
       '<meta name="color-scheme">',
       metaScheme !== null
-        ? 'Found, content <b>' + esc(metaScheme || "(empty)") + "</b>"
+        ? "Found, content <b>" + esc(metaScheme || "(empty)") + "</b>"
         : "Not found",
       null,
       null
@@ -642,7 +737,7 @@
     out += finding(
       '<meta name="supported-color-schemes">',
       metaSupported !== null
-        ? 'Found, content <b>' + esc(metaSupported || "(empty)") + "</b>"
+        ? "Found, content <b>" + esc(metaSupported || "(empty)") + "</b>"
         : "Not found",
       null,
       "Both meta tags speak to email clients' own auto-dark systems. Neither changes anything you see here."
@@ -759,7 +854,6 @@
       return;
     }
     el("error").hidden = true;
-    lastSource = trimmed;
 
     // Meta tags come from the raw source, before the browser has a chance to
     // move anything around.
@@ -770,7 +864,10 @@
     var metaSupported = m2 ? m2.getAttribute("content") : null;
 
     el("intake").hidden = true;
-    el("workbench").hidden = false;
+    el("results").hidden = false;
+    el("source-name").textContent = sourceName;
+    window.scrollTo(0, 0);
+    el("results-heading").focus();
 
     el("view-light").checked = true;
     el("compare").checked = false;
@@ -806,15 +903,34 @@
 
   el("run").addEventListener("click", function () { run(el("source").value); });
 
+  // If the textarea no longer holds what the file gave us, stop calling it
+  // by the filename.
+  el("source").addEventListener("input", function () {
+    if (loadedFileText === null || el("source").value !== loadedFileText) {
+      sourceName = "pasted HTML";
+      loadedFileText = null;
+      el("file-status").hidden = true;
+    }
+  });
+
   el("file").addEventListener("change", function (e) {
     var file = e.target.files && e.target.files[0];
     if (!file) { return; }
     var reader = new FileReader();
     reader.onload = function () {
+      // Loading a file must not move the person to the preview on its own.
+      // Put the source in the textarea, say so, and let them choose to proceed.
       el("source").value = reader.result;
-      run(reader.result);
+      loadedFileText = reader.result;
+      sourceName = file.name;
+      el("error").hidden = true;
+      el("file-status").hidden = false;
+      el("file-status").textContent =
+        "Loaded " + file.name + ". The source is now in the box above. " +
+        "Select Show preview when you are ready.";
     };
     reader.onerror = function () {
+      el("file-status").hidden = true;
       el("error").hidden = false;
       el("error").textContent = "That file could not be read. Try pasting the source instead.";
     };
@@ -822,9 +938,13 @@
   });
 
   el("restart").addEventListener("click", function () {
-    el("workbench").hidden = true;
+    el("results").hidden = true;
     el("intake").hidden = false;
     el("file").value = "";
+    el("file-status").hidden = true;
+    loadedFileText = null;
+    sourceName = "pasted HTML";
+    window.scrollTo(0, 0);
     el("source").focus();
   });
 
