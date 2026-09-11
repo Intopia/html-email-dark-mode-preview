@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Riverbend Library, September notes</title>
+<style>
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+  .promo-text { font-size: 15px; line-height: 1.5; }
+
+  /* The surfaces are handled. The things sitting on them mostly are not. */
+  @media (prefers-color-scheme: dark) {
+    .page      { background-color: #14181a !important; }
+    .card      { background-color: #1e2427 !important; border-color: #38424a !important; }
+
+    /* No !important, so the inline colour on the h1 wins and the heading
+       stays dark green on a dark card. */
+    .h1        { color: #eef3f0; }
+
+    /* The button background flips but the label colour is never touched. */
+    .btn-cell  { background-color: #d9f2e2 !important; }
+  }
+
+  /* A second block gated behind a width, so it only fires on narrow previews. */
+  @media (prefers-color-scheme: dark) and (max-width: 600px) {
+    .promo-cell { background-color: #243036 !important; }
+    .promo-text { color: #dbe4e0 !important; }
+  }
+
+  /* Outlook.com targeting. Declared dark-mode work, but nothing a browser can show. */
+  [data-ogsc] .body-text { color: #dbe4e0 !important; }
+  [data-ogsb] .footer-cell { background-color: #171d1f !important; }
+</style>
+</head>
+<body class="page" style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" class="card" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 8px 28px; font-family:Georgia, serif;">
+            <h1 class="h1" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:4px 0 0 0; color:#5a6b5e;">September notes for members</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:8px 28px 20px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:16px 0 0 0; color:#33403a;">
+              The upstairs reading room reopens on the 22nd after six weeks of rewiring. The long tables
+              are back, the window seats are back, and the radiator that everybody complained about has
+              been replaced with something quieter.
+            </p>
+            <p class="body-text" style="margin:16px 0 0 0; color:#33403a;">
+              Our local history collection has finished being catalogued. Around four hundred items that
+              were previously request-only are now on open shelves at the back of the ground floor.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="promo-cell" style="padding:16px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="promo-text" style="margin:0; color:#33403a;">
+              Members get two extra renewals this month. Ask at the desk, or mention it when you phone.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 28px 28px 28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td class="btn-cell" style="background-color:#2b5f3f; padding:12px 22px;">
+                  <a class="btn-link" href="https://example.com/hours" style="font-family:Georgia, serif; font-size:16px; color:#ffffff; text-decoration:none;">Check opening hours</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="footer-cell" style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street. You are receiving this because you hold a current
+              membership. <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
