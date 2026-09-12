@@ -58,6 +58,17 @@
   than about how many style rules exist in total. Worth deciding whether the
   findings panel should say so, or count style rules recursively instead.
 
+  Note on the heading and body paragraphs: no dark rule in this file targets
+  .h1 or .body-text. The card behind them carries .n3base and does go dark,
+  so the text ends up dark on dark and close to unreadable. That is the file
+  being incomplete rather than the tool failing. It is left as it is because
+  it is a fair miniature of the real-world case in edge case 11.
+
+  A note on "Full" width: that setting means the full width of the preview
+  pane, not of your browser window. With the findings panel taking 380px,
+  the pane can easily be under 601px on a laptop, in which case N3 will not
+  fire even at Full. Widen the window if N3 stays light at Full.
+
   Expected on toggle, by width:
 
     Full   N1 light   N2 light   N3base dark   N3 dark    N4 dark

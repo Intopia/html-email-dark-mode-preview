@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Diagnostic: nested media vs pane width</title>
+
+<!--
+  DIAGNOSTIC, not part of the numbered set.
+
+  Edge case 13 showed no change across the three width settings. There are
+  two possible reasons and they need different fixes, so this file separates
+  them in a single load.
+
+  REASON 1, boring. The preview pane is never wider than 600px, so all three
+  width settings are effectively the same and nothing gated on width can
+  differ between them.
+
+  REASON 2, a real bug. Setting mediaText on a NESTED CSSMediaRule does not
+  take effect the way it does on a top-level one, so anything nested never
+  flips.
+
+  HOW TO READ THIS FILE
+
+  Strip W reports the pane width in words, using plain CSS with no
+  JavaScript. It tells you what the tool's width setting is actually
+  producing.
+
+  Strips A and B express the SAME condition two different ways:
+
+    A   nested:   @media screen and (max-width: 600px)
+                    @media (prefers-color-scheme: dark)
+
+    B   flat:     @media screen and (prefers-color-scheme: dark)
+                                 and (max-width: 600px)
+
+  Form B is the one edge case 07 already proved works. So:
+
+    A and B both dark, at the same widths   -> nesting is fine, it was
+                                               reason 1, pane width
+    B goes dark but A never does            -> reason 2, nested rules are
+                                               not being flipped
+    Neither goes dark at any width          -> the pane is never under
+                                               601px, check strip W
+
+  Expected findings: 2 blocks, 4 rules, controls enabled, no callout.
+-->
+
+<style>
+  body { margin: 0; padding: 0; font-family: Georgia, serif; }
+  table { border-collapse: collapse; }
+  .strip-text { font-size: 15px; line-height: 1.5; margin: 0; }
+
+  /* Strip W: a pure CSS width readout, no JavaScript needed */
+  .w-readout::after { content: "601px or wider"; }
+  @media (max-width: 600px) { .w-readout::after { content: "600px or narrower"; } }
+  @media (max-width: 400px) { .w-readout::after { content: "400px or narrower"; } }
+
+  /* A: nested form */
+  @media screen and (max-width: 600px) {
+    @media (prefers-color-scheme: dark) {
+      .a      { background-color: #243036 !important; }
+      .a-text { color: #dbe4e0 !important; }
+    }
+  }
+
+  /* B: flat compound form, known to work */
+  @media screen and (prefers-color-scheme: dark) and (max-width: 600px) {
+    .b      { background-color: #243036 !important; }
+    .b-text { color: #dbe4e0 !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:20px 24px 12px 24px;">
+            <p class="strip-text" style="margin:0; color:#33403a;">
+              Toggle to dark, then cycle the width setting and read the three strips below.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 24px; background-color:#e6eef3;">
+            <p class="strip-text w-readout" style="margin:0; color:#29506b;">
+              <strong>W. The preview pane is currently:</strong>&#32;
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="a" style="padding:12px 24px; background-color:#f0f4ee;">
+            <p class="a-text strip-text" style="margin:0; color:#33403a;">
+              <strong>A, nested form.</strong> Should be dark whenever W says 600px or narrower.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="b" style="padding:12px 24px; background-color:#e8eee6;">
+            <p class="b-text strip-text" style="margin:0; color:#33403a;">
+              <strong>B, flat form.</strong> Same condition, written without nesting. Should match A
+              exactly.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:12px 24px 20px 24px;">
+            <p class="strip-text" style="margin:0; color:#5a6b5e;">
+              If A and B disagree, nesting is the problem. If they agree but never go dark, read W.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
