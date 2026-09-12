@@ -635,14 +635,18 @@ iframe {
     }).join(", ");
   }
 
-  function walkRules(rules, visit) {
+  function walkRules(rules, visit, inDark) {
     if (!rules) { return; }
     for (var i = 0; i < rules.length; i++) {
       var rule = rules[i];
-      visit(rule);
+      visit(rule, inDark);
       var kids = null;
       try { kids = rule.cssRules; } catch (e) { kids = null; }
-      if (kids) { walkRules(kids, visit); }
+      if (kids) {
+        var isDark = !!(rule.media && typeof rule.media.mediaText === "string"
+                        && DARK_COND.test(rule.media.mediaText));
+        walkRules(kids, visit, inDark || isDark);
+      }
     }
   }
 
@@ -660,7 +664,7 @@ iframe {
       try { rules = sheets[s].cssRules; }
       catch (e) { found.unreadableSheets++; continue; }
 
-      walkRules(rules, function (rule) {
+      walkRules(rules, function (rule, inDark) {
         if (rule.media && typeof rule.media.mediaText === "string" && DARK_COND.test(rule.media.mediaText)) {
           var count = 0;
           try { count = rule.cssRules ? rule.cssRules.length : 0; } catch (e2) { count = 0; }
@@ -678,7 +682,11 @@ iframe {
           );
         }
 
-        if (rule.selectorText) {
+        // Client-specific hooks only count OUTSIDE a dark media block. A
+        // selector like .darkmode sitting inside @media (prefers-color-scheme:
+        // dark) is part of the media-query strategy, not a client hook, and
+        // counting it in both places reports the same rule twice.
+        if (rule.selectorText && !inDark) {
           for (var h = 0; h < CLIENT_HOOKS.length; h++) {
             var hook = CLIENT_HOOKS[h];
             if (hook.test.test(rule.selectorText)) {

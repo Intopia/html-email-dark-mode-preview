@@ -51,12 +51,23 @@
   Counting by eye, the source looks like it has 3 blocks and 7 rules.
   The gap of two rules is faults 1 and 2.
 
-  Expected on screen:
-    - Strip 1 text stays dark on a dark card after toggling. Fault 1 ate it.
-    - Strip 2 text is light grey even in the AS AUTHORED view, before you
-      toggle anything. Fault 2 leaked it out of the media query.
-    - Strip 3 text goes light but its background stays light. Fault 3 kept
-      half the rule.
+  Expected on screen. Only FIVE things change in the dark view: .page,
+  .card, .link-ok, .s3 colour and .s2 background. Everything else in this
+  email is untargeted by a surviving rule, so a lot of it correctly stays
+  light. That is not a fault, it is what is left after three parse faults.
+
+    - The main heading, the body paragraphs and the footer never change.
+      No dark rule targets .h1, .body-text or .footer-text in this file.
+    - Strip 1 does not change at all. Fault 1 ate its text rule, and its
+      cell background was never targeted either.
+    - Strip 2 text is washed-out grey in the AS AUTHORED view, before you
+      toggle anything, at 2.1:1 against its light background. In the dark
+      view it becomes readable at 5.5:1. A rule that escapes its media
+      query is broken in LIGHT mode, which is not where anyone looks for a
+      dark-mode bug.
+    - Strip 3 goes the other way. Its text lightens to #dbe4e0 while its
+      background stays light, dropping from 9.8:1 to 1.17:1, which is very
+      close to invisible.
     - Page, card and the link colour all flip correctly.
 
   Each strip is labelled with what should happen to it.

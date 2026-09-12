@@ -61,6 +61,12 @@
   and 4 would appear to do nothing and that would look like a tool fault
   rather than an email behaviour.
 
+  The footer is NOT styled by any dark rule in this file, so it stays light
+  at every width and in both views. That is not a fault, it is simply an
+  element no dark rule targets. It was left that way by accident while
+  building the file and is being kept, because it is a fair miniature of the
+  real-world case in edge case 11 where whole regions go untargeted.
+
   If every strip goes dark at every width, conditions are being flattened
   and the rewrite is wrong.
 -->
