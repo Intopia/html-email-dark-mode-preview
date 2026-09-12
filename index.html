@@ -160,27 +160,21 @@ button {
   color: var(--ink);
 }
 
-.intake-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 18px;
-  margin-top: 20px;
-}
-.or { color: var(--ink-soft); }
-input[type="file"] { font-family: var(--font-body); font-size: 1rem; max-width: 100%; }
-input[type="file"]::file-selector-button {
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 10px 16px;
-  margin-right: 12px;
-  border: 2px solid var(--brand);
+.field-label.file-label { margin-top: 26px; }
+
+.file-box {
+  padding: 12px 14px;
+  border: 2px solid var(--border-strong);
   border-radius: var(--radius);
-  background: var(--brand);
-  color: #ffffff;
-  cursor: pointer;
+  background: var(--panel);
 }
+.file-box input[type="file"] {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  max-width: 100%;
+}
+
+.intake-actions { margin-top: 26px; }
 
 .file-status {
   margin: 18px 0 0;
@@ -490,13 +484,16 @@ iframe {
       <label class="field-label" for="source">Email HTML</label>
       <textarea id="source" spellcheck="false"></textarea>
 
-      <div class="intake-actions">
-        <button class="btn-primary" id="run" type="button">Show preview</button>
-        <span class="or">or upload a file</span>
+      <label class="field-label file-label" for="file">Or upload an HTML file</label>
+      <div class="file-box">
         <input type="file" id="file" accept=".html,.htm,.txt,text/html,text/plain">
       </div>
 
       <p class="file-status" id="file-status" role="status" hidden></p>
+
+      <div class="intake-actions">
+        <button class="btn-primary" id="run" type="button">Show preview</button>
+      </div>
 
       <div class="error" id="error" hidden></div>
     </section>
