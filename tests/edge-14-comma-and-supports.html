@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 14 of 15: comma-separated conditions and @supports
+
+  Mechanism under test: per-query condition rewriting, and recursion through
+  an at-rule that is not @media.
+
+  A comma in a media query is an OR. Each query in the list is evaluated
+  independently, so removing the dark condition has to happen per query, not
+  across the whole string. Getting this wrong in either direction is bad:
+  strip too much and unrelated branches vanish, strip too little and the
+  dark branch never fires.
+
+    S1   @media print, (prefers-color-scheme: dark)
+         Light view: nothing, print does not match on screen.
+         Flipped:    print, all  -> applies at every width.
+         The clean comma test.
+
+    S2   @media screen, (prefers-color-scheme: dark)
+         Light view: ALREADY APPLIES, because screen matches.
+         Flipped:    screen, all -> still applies, so no change.
+         This block is reported as a dark block and is not conditional at
+         all. The strip renders dark BEFORE you toggle anything. Worth
+         seeing, because "found a dark block" can mean the author wrote
+         something that is not actually dark-mode-only.
+
+    S3   @supports (display: flex)
+            @media (prefers-color-scheme: dark)
+         Dark nested inside a feature query. The walk has to recurse through
+         CSSSupportsRule, not just CSSMediaRule. A walk that only descends
+         into @media will miss this completely.
+
+    S4   @media print, screen and (prefers-color-scheme: dark) and (max-width: 600px)
+         Comma AND compound in one query. Only the second branch carries the
+         dark condition, and that branch has two other conditions that must
+         survive.
+         Flipped:    print, screen and (max-width: 600px)
+         So: dark at 600 and 375, light at Full.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Not found
+    color-scheme CSS property .......... Not found
+    @media (prefers-color-scheme: dark)  Found 4 blocks, 8 rules inside
+    Client-specific dark targeting ..... Not found
+
+  The findings panel lists conditions verbatim. Check that the commas and
+  the non-dark branches are still present in the listed text.
+
+  Expected on screen:
+
+    AS AUTHORED, any width
+      S1 light    S2 DARK ALREADY    S3 light    S4 light
+
+    TOGGLED, Full
+      S1 dark     S2 dark            S3 dark     S4 light
+
+    TOGGLED, 600 or 375
+      S1 dark     S2 dark            S3 dark     S4 dark
+
+  Failure signatures:
+    - S3 never changes: the walk is not descending into @supports.
+    - S4 dark at Full: the compound branch was flattened.
+    - S1 never changes: comma lists are not being split per query.
+-->
+
+<style>
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .strip-text { font-size: 14px; line-height: 1.5; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+
+  /* S1: comma list, other branch does not match on screen */
+  @media print, (prefers-color-scheme: dark) {
+    .s1      { background-color: #243036 !important; }
+    .s1-text { color: #dbe4e0 !important; }
+  }
+
+  /* S2: comma list, other branch DOES match on screen, so this applies already */
+  @media screen, (prefers-color-scheme: dark) {
+    .s2      { background-color: #243036 !important; }
+    .s2-text { color: #dbe4e0 !important; }
+  }
+
+  /* S3: dark nested inside a feature query */
+  @supports (display: flex) {
+    @media (prefers-color-scheme: dark) {
+      .s3      { background-color: #243036 !important; }
+      .s3-text { color: #dbe4e0 !important; }
+    }
+  }
+
+  /* S4: comma plus compound conditions in the same query */
+  @media print, screen and (prefers-color-scheme: dark) and (max-width: 600px) {
+    .s4      { background-color: #243036 !important; }
+    .s4-text { color: #dbe4e0 !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 12px 28px; font-family:Georgia, serif;">
+            <h1 class="h1" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:8px 0 0 0; color:#33403a;">
+              Look at S2 before you toggle anything. It should already be dark.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s1" style="padding:14px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="s1-text strip-text" style="margin:0; color:#33403a;">
+              <strong>S1</strong> print, (prefers-color-scheme: dark). Light until toggled, then
+              dark at every width.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s2" style="padding:14px 28px; background-color:#e8eee6; font-family:Georgia, serif;">
+            <p class="s2-text strip-text" style="margin:0; color:#33403a;">
+              <strong>S2</strong> screen, (prefers-color-scheme: dark). Already dark in the
+              as-authored view, because the screen branch matches. Toggling changes nothing.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s3" style="padding:14px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="s3-text strip-text" style="margin:0; color:#33403a;">
+              <strong>S3</strong> dark nested inside @supports. If this never changes, the walk is
+              not descending into feature queries.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s4" style="padding:14px 28px; background-color:#e8eee6; font-family:Georgia, serif;">
+            <p class="s4-text strip-text" style="margin:0; color:#33403a;">
+              <strong>S4</strong> comma plus compound. Dark at 600 and 375 only. If it goes dark at
+              Full, the conditions were flattened.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:16px 28px 24px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Renewals can be done at the desk or over the phone.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

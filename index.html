@@ -199,11 +199,13 @@ button {
 /* ---------- workbar ---------- */
 
 .workbar {
+  margin-bottom: 20px;
+}
+.workbar-title {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 20px;
-  margin-bottom: 20px;
+  align-items: baseline;
+  gap: 4px 16px;
 }
 .workbar h2 { font-size: 1.5rem; }
 /* Focus is moved here programmatically after submission, which does not match
@@ -222,7 +224,7 @@ button {
   font-size: 0.9rem;
   font-weight: 500;
 }
-.workbar button { margin-left: auto; }
+.workbar button { margin-top: 14px; }
 
 /* ---------- results grid ---------- */
 
@@ -502,8 +504,10 @@ iframe {
     <div id="results" hidden>
 
       <div class="workbar">
-        <h2 id="results-heading" tabindex="-1">Preview</h2>
-        <p>Showing <b id="source-name">pasted HTML</b></p>
+        <div class="workbar-title">
+          <h2 id="results-heading" tabindex="-1">Preview</h2>
+          <p>Showing <b id="source-name">pasted HTML</b></p>
+        </div>
         <button class="btn-primary" id="restart" type="button">Load a different email</button>
       </div>
 

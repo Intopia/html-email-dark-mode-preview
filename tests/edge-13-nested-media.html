@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 13 of 15: nested media queries
+
+  Mechanism under test: the recursive walk, and what a nested condition means
+  once the dark part is switched on. Nesting at-rules inside @media is valid
+  CSS and the conditions are ANDed, so an inner dark block still sits behind
+  whatever the outer query demands.
+
+  Four nesting arrangements, each with its own labelled strip.
+
+    N1   @media screen and (max-width: 600px)
+           @media (prefers-color-scheme: dark)
+         Dark inside a breakpoint. Flipping the inner query does not remove
+         the outer width gate, so this works at 600 and 375 only.
+
+    N2   @media print
+           @media (prefers-color-scheme: dark)
+         Dark inside a print query. Found by the tool, reported in the
+         findings, and completely invisible on screen. Correct, but worth
+         seeing, because "found" does not mean "will ever be seen".
+
+    N3   @media (prefers-color-scheme: dark)
+           .n3base
+           @media (min-width: 601px)
+         Reverse nesting. The outer query is the dark one. Its direct child
+         .n3base applies at every width once flipped, while the nested
+         breakpoint keeps its own strip to Full only.
+
+    N4   @media (prefers-color-scheme: dark)
+           @media (prefers-color-scheme: dark)
+         Redundant double nesting, which does turn up in generated CSS when
+         two templates are concatenated. BOTH blocks must be found and
+         flipped. This is the real recursion test: a walk that only inspects
+         top-level rules will find the outer block, flip it, and the strip
+         will still not change, because the inner block is untouched.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Not found
+    color-scheme CSS property .......... Not found
+    @media (prefers-color-scheme: dark)  Found 5 blocks, 9 rules inside
+    Client-specific dark targeting ..... Not found
+
+  Five, not four, because N4 contributes two: the outer and the inner.
+
+  A note on that rule count. The tool counts a block's direct children, and
+  a nested at-rule counts as one child. So N3's outer block reports 2, being
+  .n3base plus the nested breakpoint, not 3. N4's outer block reports 1,
+  being only the nested block. The number is honest about structure rather
+  than about how many style rules exist in total. Worth deciding whether the
+  findings panel should say so, or count style rules recursively instead.
+
+  Expected on toggle, by width:
+
+    Full   N1 light   N2 light   N3base dark   N3 dark    N4 dark
+    600    N1 dark    N2 light   N3base dark   N3 light   N4 dark
+    375    N1 dark    N2 light   N3base dark   N3 light   N4 dark
+
+  N2 never changes at any width, by design.
+  If N4 never changes, the walk is not recursing.
+-->
+
+<style>
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .strip-text { font-size: 14px; line-height: 1.5; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+
+  /* N1: dark inside a breakpoint */
+  @media screen and (max-width: 600px) {
+    @media (prefers-color-scheme: dark) {
+      .n1      { background-color: #243036 !important; }
+      .n1-text { color: #dbe4e0 !important; }
+    }
+  }
+
+  /* N2: dark inside print, found but never visible on screen */
+  @media print {
+    @media (prefers-color-scheme: dark) {
+      .n2      { background-color: #243036 !important; }
+      .n2-text { color: #dbe4e0 !important; }
+    }
+  }
+
+  /* N3: reverse nesting, dark on the outside */
+  @media (prefers-color-scheme: dark) {
+    .n3base { background-color: #1e2427 !important; border-color: #38424a !important; }
+    @media (min-width: 601px) {
+      .n3      { background-color: #243036 !important; }
+      .n3-text { color: #dbe4e0 !important; }
+    }
+  }
+
+  /* N4: redundant double nesting, both blocks must be flipped */
+  @media (prefers-color-scheme: dark) {
+    @media (prefers-color-scheme: dark) {
+      .n4      { background-color: #243036 !important; }
+      .n4-text { color: #dbe4e0 !important; }
+    }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" class="n3base" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 12px 28px; font-family:Georgia, serif;">
+            <h1 class="h1" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:8px 0 0 0; color:#33403a;">
+              The card behind these strips carries .n3base, the direct child of the outer dark
+              block. It should darken at every width once toggled.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="n1" style="padding:14px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="n1-text strip-text" style="margin:0; color:#33403a;">
+              <strong>N1</strong> dark nested inside max-width 600. Dark at 600 and 375 only.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="n2" style="padding:14px 28px; background-color:#e8eee6; font-family:Georgia, serif;">
+            <p class="n2-text strip-text" style="margin:0; color:#33403a;">
+              <strong>N2</strong> dark nested inside print. Reported in the findings, never visible
+              on screen at any width.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="n3" style="padding:14px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="n3-text strip-text" style="margin:0; color:#33403a;">
+              <strong>N3</strong> breakpoint nested inside dark. Dark at Full only.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="n4" style="padding:14px 28px; background-color:#e8eee6; font-family:Georgia, serif;">
+            <p class="n4-text strip-text" style="margin:0; color:#33403a;">
+              <strong>N4</strong> dark nested inside dark. Dark at every width. If this one never
+              changes, the walk is not recursing.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:16px 28px 24px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Renewals can be done at the desk or over the phone.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

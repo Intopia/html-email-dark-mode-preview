@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 07 of 15: responsive, compound conditions
+
+  Mechanism under test: condition rewriting. The tool removes only the
+  prefers-color-scheme part of a media query and leaves the rest intact.
+  If it flattened conditions to "all" instead, this file would show a dark
+  state that no email client could ever produce.
+
+  There are five dark blocks. Two share the bare condition, which is itself
+  worth testing, since two blocks with identical conditionText must be
+  tracked as separate rule objects rather than collapsed into one.
+
+    BLOCK 1a bare condition, page and card surfaces
+             applies at every width
+
+    BLOCK 1b bare condition again, strip 1
+             applies at every width
+
+    BLOCK 2  and (max-width: 600px)
+             narrow only, so nothing at Full
+
+    BLOCK 3  and (min-width: 601px)
+             wide only, so nothing at 375
+
+    BLOCK 4  screen and (prefers-color-scheme: dark) and (max-width: 400px)
+             three conditions, one of which is a media type rather than a
+             feature. Tests that "screen" survives the rewrite.
+
+  Each block styles its own labelled strip, so you can read off which
+  conditions fired without inspecting anything.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Found, content "light dark"
+    color-scheme CSS property .......... Found in 1 rule (:root)
+    @media (prefers-color-scheme: dark)  Found 5 blocks, 11 rules inside
+    Client-specific dark targeting ..... Not found
+
+  The findings panel lists each block's condition verbatim. Check that all
+  four appear and that the width parts are still present in the listed text.
+
+  Expected on toggle, by width setting:
+
+    Full   strip 1 dark    strip 2 light   strip 3 dark    strip 4 light
+    600    strip 1 dark    strip 2 dark    strip 3 light   strip 4 light
+    375    strip 1 dark    strip 2 dark    strip 3 light   strip 4 dark
+
+    (at 600 the max-width: 600px block does apply, since the query is
+     inclusive, and the min-width: 601px block does not)
+
+  This is the file that justifies the width control. Without it, blocks 2
+  and 4 would appear to do nothing and that would look like a tool fault
+  rather than an email behaviour.
+
+  If every strip goes dark at every width, conditions are being flattened
+  and the rewrite is wrong.
+-->
+
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .strip-text { font-size: 14px; line-height: 1.5; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+
+  /* BLOCK 1, bare condition, 3 rules */
+  @media (prefers-color-scheme: dark) {
+    .page      { background-color: #14181a !important; }
+    .card      { background-color: #1e2427 !important; border-color: #38424a !important; }
+    .body-text { color: #dbe4e0 !important; }
+  }
+
+  /* BLOCK 1 also styles strip 1, kept separate for clarity, 2 rules */
+  @media (prefers-color-scheme: dark) {
+    .s1      { background-color: #243036 !important; }
+    .s1-text { color: #dbe4e0 !important; }
+  }
+
+  /* BLOCK 2, narrow only, 2 rules */
+  @media (prefers-color-scheme: dark) and (max-width: 600px) {
+    .s2      { background-color: #243036 !important; }
+    .s2-text { color: #dbe4e0 !important; }
+  }
+
+  /* BLOCK 3, wide only, 2 rules */
+  @media (prefers-color-scheme: dark) and (min-width: 601px) {
+    .s3      { background-color: #243036 !important; }
+    .s3-text { color: #dbe4e0 !important; }
+  }
+
+  /* BLOCK 4, media type plus two features, 2 rules */
+  @media screen and (prefers-color-scheme: dark) and (max-width: 400px) {
+    .s4      { background-color: #243036 !important; }
+    .s4-text { color: #dbe4e0 !important; }
+  }
+</style>
+</head>
+<body class="page" style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" class="card" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 12px 28px; font-family:Georgia, serif;">
+            <h1 class="h1 body-text" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:8px 0 0 0; color:#33403a;">
+              Four strips below, each gated by a different media condition. Toggle to dark, then
+              change the width setting and watch which ones follow.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s1" style="padding:14px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="s1-text strip-text" style="margin:0; color:#33403a;">
+              <strong>Strip 1</strong> bare condition. Dark at every width.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s2" style="padding:14px 28px; background-color:#e8eee6; font-family:Georgia, serif;">
+            <p class="s2-text strip-text" style="margin:0; color:#33403a;">
+              <strong>Strip 2</strong> and (max-width: 600px). Dark at 600 and 375 only.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s3" style="padding:14px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="s3-text strip-text" style="margin:0; color:#33403a;">
+              <strong>Strip 3</strong> and (min-width: 601px). Dark at Full only.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s4" style="padding:14px 28px; background-color:#e8eee6; font-family:Georgia, serif;">
+            <p class="s4-text strip-text" style="margin:0; color:#33403a;">
+              <strong>Strip 4</strong> screen and (max-width: 400px). Dark at 375 only.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:16px 28px 24px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Renewals can be done at the desk or over the phone. If your card expired during the
+              closure, we have already extended it by two months.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

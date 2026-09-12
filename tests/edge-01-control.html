@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 01 of 15: control
+
+  Mechanism under test: nothing. This is the baseline the other fourteen
+  files are variations of. Normal table layout, inline CSS, no dark-mode
+  handling of any kind.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Not found
+    meta supported-color-schemes ....... Not found
+    color-scheme CSS property .......... Not found
+    @media (prefers-color-scheme: dark)  Not found
+    Client-specific dark targeting ..... Not found
+
+    "With dark-mode CSS applied" radio ... disabled
+    "Compare side by side" checkbox ...... disabled
+    Amber callout ........................ shown
+
+  If any finding reports found, something is matching that should not be.
+-->
+
+<style>
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 8px 28px; font-family:Georgia, serif;">
+            <h1 class="h1" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:4px 0 0 0; color:#5a6b5e;">September notes for members</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:8px 28px 20px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:16px 0 0 0; color:#33403a;">
+              The upstairs reading room reopens on the 22nd after six weeks of rewiring. The long
+              tables are back, the window seats are back, and the radiator that everybody complained
+              about has been replaced with something quieter.
+            </p>
+            <p class="body-text" style="margin:16px 0 0 0; color:#33403a;">
+              Our local history collection has finished being catalogued. Around four hundred items
+              that were previously request-only are now on open shelves at the back of the ground
+              floor.
+            </p>
+            <p class="body-text" style="margin:16px 0 0 0; color:#33403a;">
+              Renewals can be done at the desk or over the phone. If your card expired during the
+              closure, we have already extended it by two months, so there is nothing you need to do.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 28px 12px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Members get two extra renewals this month. Ask at the desk, or mention it when you
+              phone.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:16px 28px 28px 28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background-color:#2b5f3f; padding:12px 22px;">
+                  <a href="https://example.com/hours" style="font-family:Georgia, serif; font-size:16px; color:#ffffff; text-decoration:none;">Check opening hours</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street. You are receiving this because you hold a current
+              membership. <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 06 of 15: dark CSS inside MSO conditional comments
+
+  Mechanism under test: the silent false negative. This is the highest-value
+  file in the set, because it is the only one where the tool can under-report
+  and look completely normal doing it.
+
+  There are TWO dark media blocks in this file, in two different kinds of
+  conditional comment, and a browser parses only one of them. (The literal
+  comment syntax is not repeated here, because writing it inside a comment
+  would close this comment early. See the two labelled blocks below.)
+
+  BLOCK A, downlevel-revealed. The wrapper opens a comment and then closes
+  it again immediately with a nested marker, so a browser sees the style
+  element as ordinary markup and parses it. Outlook, which honours the
+  conditional, skips it. This is the standard "everything except Outlook"
+  wrapper and it is extremely common in real email.
+  The tool SHOULD find this block.
+
+  BLOCK B, downlevel-hidden. No nested marker, so a browser treats the whole
+  thing as one HTML comment and never parses the style element at all. It
+  never reaches doc.styleSheets. The tool CANNOT find this block, and nothing
+  in the interface will indicate that anything was missed.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Not found
+    color-scheme CSS property .......... Not found
+    @media (prefers-color-scheme: dark)  Found 1 block, 5 rules inside
+    Client-specific dark targeting ..... Not found
+
+  The source literally contains 2 blocks and 7 rules. The tool will report
+  1 and 5. That gap is the whole test.
+
+  Expected on toggle:
+    - Page, card, body text and footer all flip dark. Block A working.
+    - The labelled amber strip in the middle DOES NOT change. Block B is
+      invisible to the browser. The strip says so on its face so you can
+      see the failure rather than infer it.
+
+  Is this a bug? Arguably not, since a browser genuinely cannot render what
+  it cannot parse, and Outlook desktop does not support prefers-color-scheme
+  anyway, so block B is unlikely to do anything in the wild either. But an
+  author who put ALL their dark CSS in a downlevel-hidden block would get a
+  "Not found" result and a callout telling them there is no dark-mode CSS,
+  which would be wrong. Worth deciding whether to scan the raw source for
+  prefers-color-scheme inside HTML comments and report it as "declared but
+  not parsed".
+
+  Note for whoever edits this file: never put a comment-closing sequence
+  inside a documentation comment. Doing so ends the comment early and dumps
+  the remaining prose into the rendered email. That happened while building
+  this file, which is a fair demonstration of why edge case 08 exists.
+-->
+
+<style>
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+  .strip-text { font-size: 15px; line-height: 1.5; }
+</style>
+
+<!-- BLOCK A: downlevel-revealed. A browser DOES parse this. 5 rules. -->
+<!--[if !mso]><!-->
+<style>
+  @media (prefers-color-scheme: dark) {
+    .page        { background-color: #14181a !important; }
+    .card        { background-color: #1e2427 !important; border-color: #38424a !important; }
+    .body-text   { color: #dbe4e0 !important; }
+    .footer-cell { background-color: #171d1f !important; border-top-color: #38424a !important; }
+    .footer-text { color: #9fb3a8 !important; }
+  }
+</style>
+<!--<![endif]-->
+
+<!-- BLOCK B: downlevel-hidden. A browser NEVER parses this. 2 rules. -->
+<!--[if mso]>
+<style>
+  @media (prefers-color-scheme: dark) {
+    .mso-strip      { background-color: #243036 !important; }
+    .mso-strip-text { color: #dbe4e0 !important; }
+  }
+</style>
+<![endif]-->
+
+</head>
+<body class="page" style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" class="card" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 8px 28px; font-family:Georgia, serif;">
+            <h1 class="h1 body-text" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:4px 0 0 0; color:#5a6b5e;">September notes for members</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:8px 28px 16px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0 0 16px 0; color:#33403a;">
+              The upstairs reading room reopens on the 22nd after six weeks of rewiring. The long
+              tables are back, the window seats are back, and the radiator that everybody complained
+              about has been replaced with something quieter.
+            </p>
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Our local history collection has finished being catalogued. Around four hundred items
+              that were previously request-only are now on open shelves at the back of the ground
+              floor.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Styled only by BLOCK B, so it never changes in a browser. -->
+        <tr>
+          <td class="mso-strip" style="padding:16px 28px; background-color:#faf1dc; font-family:Georgia, serif;">
+            <p class="mso-strip-text strip-text" style="margin:0; color:#6f5410;">
+              This strip is styled only by the block inside the MSO conditional comment. If it is
+              still light after you toggle, the tool behaved as expected.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:16px 28px 24px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Renewals can be done at the desk or over the phone. If your card expired during the
+              closure, we have already extended it by two months.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="footer-cell" style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

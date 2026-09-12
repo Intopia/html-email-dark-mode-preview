@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<!--
+  EDGE CASE 15 of 15: converted .eml
+
+  Mechanism under test: whether dark-mode CSS survives the trip through the
+  EML converter. This is the only failure in the set that can reach you
+  looking exactly like a legitimate result.
+
+  Quoted-printable encoding wraps at 76 characters using a soft line break,
+  an equals sign at end of line, which the decoder must remove. If a soft
+  break falls inside "prefers-color-scheme" and the decoder does not rejoin
+  the line, the browser sees a broken at-rule, drops the whole block, and
+  the preview reports "No dark-mode CSS found". That result is
+  indistinguishable from an email that genuinely has none.
+
+  This file has three soft breaks placed deliberately at the worst spots:
+    1. inside the feature name, prefers-color-sc + heme
+    2. inside the at-rule keyword, @me + dia
+    3. inside a class attribute value, body-te + xt
+
+  It also carries an encoded-word Subject header and a pound sign in the
+  body, so character decoding is exercised alongside the line joining.
+
+  HOW TO USE THIS FILE
+    1. Run edge-15-converted.eml through the EML converter.
+    2. Diff the converter output against edge-15-expected.html. They should
+       match apart from line endings, since the .eml uses CRLF on the wire.
+    3. Load both into the preview tool and compare the findings.
+
+  Expected in the preview tool, for BOTH files:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Found, content "light dark"
+    color-scheme CSS property .......... Found in 1 rule (:root)
+    @media (prefers-color-scheme: dark)  Found 1 block, 6 rules inside
+    Client-specific dark targeting ..... Not found
+
+  If the converted version reports "Not found" while the expected version
+  reports the block, the fault is in the converter, not the preview tool.
+-->
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Riverbend Library, September notes</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+
+  @media (prefers-color-scheme: dark) {
+    .page        { background-color: #14181a !important; }
+    .card        { background-color: #1e2427 !important; border-color: #38424a !important; }
+    .h1          { color: #eef3f0 !important; }
+    .body-text   { color: #dbe4e0 !important; }
+    .footer-cell { background-color: #171d1f !important; }
+    .footer-text { color: #9fb3a8 !important; }
+  }
+</style>
+</head>
+<body class="page" style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" class="card" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 12px 28px; font-family:Georgia, serif;">
+            <h1 class="h1" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:8px 0 0 0; color:#33403a;">
+              September notes for members. Annual membership is £12.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 28px 24px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0 0 16px 0; color:#33403a;">
+              The upstairs reading room reopens on the 22nd after six weeks of rewiring. The long
+              tables are back, the window seats are back, and the radiator that everybody complained
+              about has been replaced with something quieter.
+            </p>
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Renewals can be done at the desk or over the phone. If your card expired during the
+              closure, we have already extended it by two months.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="footer-cell" style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a href="https://example.com/unsubscribe?id=4471&amp;src=news" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

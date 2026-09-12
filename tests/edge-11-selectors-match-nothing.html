@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 11 of 15: selectors that match nothing
+
+  Mechanism under test: the gap between declared and applied. Reconstructed
+  from a real newsletter in the wild corpus, where the dark mode fired
+  correctly and made the email measurably worse.
+
+  The dark block has 11 rules. Five use class selectors, six use element
+  selectors. Of the five class selectors, exactly ONE matches anything in
+  this email. The other four, including the only rule that would have made
+  the background dark, target classes that were never applied to the markup.
+
+    .dark-bg     1 match     the one island that works
+    .light-bg    0 matches
+    .dark-img    0 matches
+    .light-img   0 matches
+    .darkmode    0 matches   <- this is the one that mattered
+
+  The six element selectors all match, so the text colour DOES change. The
+  backgrounds come from bgcolor attributes and inline styles on elements
+  carrying none of those classes, so nothing goes dark.
+
+  The result is light grey text on a white background:
+
+    light mode   #33403a on #ffffff   10.8:1   passes comfortably
+    dark mode    #a0a0a0 on #ffffff    2.6:1   fails 1.4.3 badly
+    as designed  #a0a0a0 on #272623    5.8:1   would have passed
+
+  The design intent was sound. One missing class hook turns it into a
+  contrast failure on every piece of body text.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Found, content "light dark"
+    color-scheme CSS property .......... Not found
+    @media (prefers-color-scheme: dark)  Found 1 block, 11 rules inside
+    Client-specific dark targeting ..... Not found
+
+  Expected on toggle: the email stays white. All body text fades to light
+  grey. One strip, the one carrying .dark-bg, flips properly to charcoal
+  with white text and sits there as the single working island.
+
+  This is the case most likely to be misread as "the tool did nothing". It
+  did exactly what the email asked. Use Compare side by side, because the
+  change is real but too subtle to catch by flipping back and forth.
+
+  What this file argues for: a findings line reporting how many selectors in
+  a dark block match elements in the email. "1 of 5 class selectors match"
+  would point straight at the missing hook. Note it would NOT have caught
+  edge case 12, where every selector matches and the rules cancel instead.
+-->
+
+<style>
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .strip-text { font-size: 14px; line-height: 1.5; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+
+  @media (prefers-color-scheme: dark) {
+    /* Class selectors. Only .dark-bg matches anything in this email. */
+    .dark-bg   { background-color: #272623 !important; color: #ffffff !important; }
+    .light-bg  { background-color: #272623 !important; color: #8a8b93 !important; }
+    .dark-img  { display: block !important; overflow: visible !important; max-height: inherit !important; }
+    .light-img { display: none !important; }
+    .darkmode  { background-color: #272623 !important; }
+
+    /* Element selectors. All of these match, so the text really does change. */
+    h1   { color: #a0a0a0 !important; }
+    h2   { color: #a0a0a0 !important; }
+    p    { color: #a0a0a0 !important; }
+    span { color: #a0a0a0 !important; }
+    td   { color: #a0a0a0 !important; }
+    a    { color: #a0a0a0 !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#eef0ec" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td bgcolor="#ffffff" style="padding:24px 28px 8px 28px; background-color:#ffffff; font-family:Georgia, serif;">
+            <h1 class="h1" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:4px 0 0 0; color:#5a6b5e;">September notes for members</p>
+          </td>
+        </tr>
+
+        <!-- The single element carrying .dark-bg. This one works. -->
+        <tr>
+          <td class="dark-bg" bgcolor="#eaf0f6" style="padding:14px 28px; background-color:#eaf0f6; font-family:Georgia, serif;">
+            <p class="strip-text" style="margin:0; color:#192733;">
+              <strong>The working island.</strong> This strip carries .dark-bg, the only class
+              selector in the dark block that matches anything. It should flip to charcoal with
+              white text while everything around it stays white.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td bgcolor="#ffffff" style="padding:16px 28px 8px 28px; background-color:#ffffff; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0 0 16px 0; color:#33403a;">
+              The upstairs reading room reopens on the 22nd after six weeks of rewiring. The long
+              tables are back, the window seats are back, and the radiator that everybody complained
+              about has been replaced with something quieter.
+            </p>
+            <p class="body-text" style="margin:0 0 16px 0; color:#33403a;">
+              Our local history collection has finished being catalogued. Around four hundred items
+              that were previously request-only are now on open shelves at the back of the ground
+              floor.
+            </p>
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Renewals can be done at the desk or over the phone. If your card expired during the
+              closure, we have already extended it by two months, so there is nothing you need to do.
+              <a href="https://example.com/hours" style="color:#2b5f3f;">Check opening hours</a>
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td bgcolor="#ffffff" style="padding:16px 28px 28px 28px; background-color:#ffffff;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td bgcolor="#2b5f3f" style="background-color:#2b5f3f; padding:12px 22px;">
+                  <a href="https://example.com/renew" style="font-family:Georgia, serif; font-size:16px; color:#ffffff; text-decoration:none;">Renew your card</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td bgcolor="#f4f6f3" style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

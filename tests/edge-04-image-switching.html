@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 04 of 15: image switching
+
+  Mechanism under test: two different ways of swapping a light asset for a
+  dark one, only ONE of which this tool can follow.
+
+  A) CSS class swap. .light-img is hidden and .dark-img is shown inside the
+     dark media block. This is the dominant real-world pattern and it is the
+     one the Selfridges email in the wild corpus used. The tool SHOULD follow
+     this, because it is ordinary CSS inside the media block.
+
+  B) <picture> with <source media="(prefers-color-scheme: dark)">. This is
+     NOT CSS. It lives on an HTML attribute, not in a stylesheet, so it never
+     appears in doc.styleSheets and the mediaText rewrite cannot touch it.
+     The tool CANNOT follow this and will not report it either.
+
+  All images are inline SVG data URIs, so the file is self-contained, works
+  offline, and fires no tracking requests during testing.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Found, content "light dark"
+    color-scheme CSS property .......... Found in 1 rule (:root)
+    @media (prefers-color-scheme: dark)  Found 1 block, 8 rules inside
+    Client-specific dark targeting ..... Not found
+
+  Expected on toggle:
+    - Surfaces flip dark.
+    - The masthead logo SWAPS. The light wordmark disappears, the dark one
+      appears. Method A works.
+    - The banner image DOES NOT swap. It still reads "LIGHT banner image"
+      in the dark view. Method B is not followed.
+
+  That second result is correct behaviour, not a bug, but it is a real blind
+  spot worth knowing about. An email that does all its switching via
+  <picture> would show no image change here even though a real client would
+  swap them. Consider whether the findings panel should report the presence
+  of <source media="(prefers-color-scheme: dark)"> so the gap is visible
+  rather than silent.
+
+  Accessibility note, outside this tool's scope but worth carrying to the
+  tester: both class-swapped images carry the SAME alt text. Only one is
+  displayed at a time, so this is correct. If both were visible, or if the
+  hiding technique failed in a client, the alt text would be announced twice.
+-->
+
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  img { border: 0; display: block; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+
+  @media (prefers-color-scheme: dark) {
+    .page      { background-color: #14181a !important; }
+    .card      { background-color: #1e2427 !important; border-color: #38424a !important; }
+    .body-text { color: #dbe4e0 !important; }
+    .footer-cell { background-color: #171d1f !important; border-top-color: #38424a !important; }
+    .footer-text { color: #9fb3a8 !important; }
+
+    /* Method A, the part the tool can follow */
+    .light-img { display: none !important; }
+    .dark-img  { display: block !important; max-height: inherit !important; overflow: visible !important; }
+  }
+</style>
+</head>
+<body class="page" style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" class="card" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <!-- Method A: class swap. Both images in the DOM, one hidden. -->
+        <tr>
+          <td style="padding:24px 28px 8px 28px;">
+            <img class="light-img" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMjAnIGhlaWdodD0nNDQnPjxyZWN0IHdpZHRoPSczMjAnIGhlaWdodD0nNDQnIGZpbGw9JyNmZmZmZmYnLz48dGV4dCB4PScxMCcgeT0nMzAnIGZvbnQtZmFtaWx5PSdHZW9yZ2lhLHNlcmlmJyBmb250LXNpemU9JzI0JyBmaWxsPScjMmIzYTJmJz5SaXZlcmJlbmQgTGlicmFyeTwvdGV4dD48L3N2Zz4=" alt="Riverbend Library" width="320" height="44">
+            <div class="dark-img" style="display:none; overflow:hidden; max-height:0;">
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMjAnIGhlaWdodD0nNDQnPjxyZWN0IHdpZHRoPSczMjAnIGhlaWdodD0nNDQnIGZpbGw9JyMxZTI0MjcnLz48dGV4dCB4PScxMCcgeT0nMzAnIGZvbnQtZmFtaWx5PSdHZW9yZ2lhLHNlcmlmJyBmb250LXNpemU9JzI0JyBmaWxsPScjZWVmM2YwJz5SaXZlcmJlbmQgTGlicmFyeTwvdGV4dD48L3N2Zz4=" alt="Riverbend Library" width="320" height="44">
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:8px 28px 16px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0; color:#33403a;">
+              The upstairs reading room reopens on the 22nd after six weeks of rewiring. The long
+              tables are back, and the radiator that everybody complained about has been replaced
+              with something quieter.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Method B: picture element. The tool cannot follow this. -->
+        <tr>
+          <td style="padding:0 28px 16px 28px;">
+            <picture>
+              <source srcset="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1NDQnIGhlaWdodD0nMTIwJz48cmVjdCB3aWR0aD0nNTQ0JyBoZWlnaHQ9JzEyMCcgZmlsbD0nIzI0MzAzNicvPjx0ZXh0IHg9JzIwJyB5PSc2OCcgZm9udC1mYW1pbHk9J0dlb3JnaWEsc2VyaWYnIGZvbnQtc2l6ZT0nMjgnIGZpbGw9JyNlZWYzZjAnPkRBUksgYmFubmVyIGltYWdlPC90ZXh0Pjwvc3ZnPg==" media="(prefers-color-scheme: dark)">
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1NDQnIGhlaWdodD0nMTIwJz48cmVjdCB3aWR0aD0nNTQ0JyBoZWlnaHQ9JzEyMCcgZmlsbD0nI2U0ZWJlMicvPjx0ZXh0IHg9JzIwJyB5PSc2OCcgZm9udC1mYW1pbHk9J0dlb3JnaWEsc2VyaWYnIGZvbnQtc2l6ZT0nMjgnIGZpbGw9JyMyYjNhMmYnPkxJR0hUIGJhbm5lciBpbWFnZTwvdGV4dD48L3N2Zz4=" alt="The upstairs reading room" width="544" height="120" style="width:100%; max-width:544px; height:auto;">
+            </picture>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 28px 24px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Our local history collection has finished being catalogued. Around four hundred items
+              that were previously request-only are now on open shelves.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="footer-cell" style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a class="footer-link" href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

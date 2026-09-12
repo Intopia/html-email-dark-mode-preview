@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 08 of 15: broken CSS
+
+  Mechanism under test: what the tool reports when the stylesheet does not
+  say what the author thinks it says. All three faults here were found in
+  real emails, and none of them produce an error anyone would notice.
+
+  The tool reads the browser's parsed CSSOM, not the raw text, so it reports
+  what actually exists rather than what was typed. That is the correct
+  behaviour and it is what makes the rule counts trustworthy. A count that
+  comes up short of the source is the finding, not a bug.
+
+  FAULT 1, unclosed comment. A comment opens with a missing slash and runs
+  forward to the next closing marker, swallowing an entire rule on the way.
+  This is the exact fault found in a Selfridges email in the wild corpus,
+  where it silently deleted the rule that set all the text colours.
+
+  FAULT 2, stray closing brace. An extra brace ends the media block early.
+  The rule that follows is no longer inside any media query, so it applies
+  in BOTH views. Look for this one in the light view, not the dark one.
+
+  Worth knowing about fault 2: a stray closing brace at the top level is not
+  simply ignored. The parser starts consuming a new qualified rule and runs
+  forward until it finds an opening brace, which means it swallows whatever
+  comes next. In the first draft of this file the stray brace was in the
+  middle and it ate the entire block after it, dropping that block from the
+  findings without trace. It is deliberately the last group in the stylesheet
+  now. If you add anything after it, expect that addition to vanish.
+
+  FAULT 3, missing colon. One declaration is malformed, so the browser drops
+  that declaration and keeps the rest of the rule. The result is a rule that
+  half works: text colour changes, background does not. That produces a
+  low-contrast wash, which is the same signature as the Hustle email in the
+  wild corpus.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Not found
+    color-scheme CSS property .......... Not found
+    @media (prefers-color-scheme: dark)  Found 3 blocks, 5 rules inside
+    Client-specific dark targeting ..... Not found
+
+  Counting by eye, the source looks like it has 3 blocks and 7 rules.
+  The gap of two rules is faults 1 and 2.
+
+  Expected on screen:
+    - Strip 1 text stays dark on a dark card after toggling. Fault 1 ate it.
+    - Strip 2 text is light grey even in the AS AUTHORED view, before you
+      toggle anything. Fault 2 leaked it out of the media query.
+    - Strip 3 text goes light but its background stays light. Fault 3 kept
+      half the rule.
+    - Page, card and the link colour all flip correctly.
+
+  Each strip is labelled with what should happen to it.
+-->
+
+<style>
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .strip-text { font-size: 14px; line-height: 1.5; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+
+  /* BLOCK 1. Looks like 4 rules. FAULT 1 means only 3 survive. */
+  @media (prefers-color-scheme: dark) {
+    .page { background-color: #14181a !important; }
+    .card { background-color: #1e2427 !important; border-color: #38424a !important; }
+    /* Strip 1 text colour *
+    .s1-text { color: #dbe4e0 !important; }
+    /* Link colour */
+    .link-ok { color: #6fd39a !important; }
+  }
+
+  /* BLOCK 2. One rule, but FAULT 3 drops one of its two declarations. */
+  @media (prefers-color-scheme: dark) {
+    .s3 { background-color #243036 !important; color: #dbe4e0 !important; }
+  }
+
+  /* BLOCK 3. Looks like 2 rules. FAULT 2 means only 1 is inside the block.
+     This group is deliberately LAST, because a stray closing brace consumes
+     forward until the next opening brace, so anything following it would be
+     swallowed whole. */
+  @media (prefers-color-scheme: dark) {
+    .s2 { background-color: #243036 !important; }
+  }
+    .s2-text { color: #9aa8a2 !important; }
+  }
+</style>
+</head>
+<body class="page" style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" class="card" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 12px 28px; font-family:Georgia, serif;">
+            <h1 class="h1" style="margin:0; color:#2b3a2f;">Riverbend Library</h1>
+            <p class="body-text" style="margin:8px 0 0 0; color:#33403a;">
+              Three strips, three CSS faults. Check strip 2 before you toggle anything.
+              <a class="link-ok" href="https://example.com/hours" style="color:#2b5f3f;">This link colour works.</a>
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s1" style="padding:14px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="s1-text strip-text" style="margin:0; color:#33403a;">
+              <strong>Strip 1, unclosed comment.</strong> This text should stay dark after
+              toggling, because the rule that would have lightened it was swallowed by a comment.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s2" style="padding:14px 28px; background-color:#e8eee6; font-family:Georgia, serif;">
+            <p class="s2-text strip-text" style="margin:0; color:#33403a;">
+              <strong>Strip 2, stray brace.</strong> This text should already be washed-out grey
+              in the as-authored view, before you toggle. It escaped the media query.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="s3" style="padding:14px 28px; background-color:#f0f4ee; font-family:Georgia, serif;">
+            <p class="s3-text strip-text" style="margin:0; color:#33403a;">
+              <strong>Strip 3, missing colon.</strong> After toggling, this strip's text should go
+              light while its background stays light. Half the rule survived.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:16px 28px 24px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Renewals can be done at the desk or over the phone.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

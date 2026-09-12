@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Riverbend Library, September notes</title>
+
+<!--
+  EDGE CASE 12 of 15: two dark blocks that cancel each other out
+
+  Mechanism under test: cascade fidelity. Reconstructed from a real retail
+  email in the wild corpus where the dark mode produced no change whatsoever,
+  despite seven declared rules and a correctly prepared second logo.
+
+  There are two dark blocks. They use different naming conventions, which is
+  the tell that they came from two different sources: one blog post or ESP
+  help page for the .dark-img / .light-img pattern, another for the
+  .darkmode_on / .darkmode_off pattern. Both sets of class names ended up on
+  the SAME two elements.
+
+      <img class="light-img darkmode_on">      the light logo
+      <div class="dark-img darkmode_off">      the dark logo
+
+  Block A says:  show .dark-img, hide .light-img
+  Block B says:  hide .darkmode_off, show .darkmode_on
+
+  Identical specificity (0,1,0), all !important, so source order decides and
+  block B wins both. The result is precisely the light-mode state. The dark
+  logo that somebody sourced, exported and wired up correctly never appears.
+
+  The same thing happens again with .body-text, which both blocks set. Block
+  B reverts it to the light value, so the text stays dark on a dark card.
+
+  The original email carried a comment reading "do not combine with above
+  media query", so the author knew the blocks were separate. What nobody
+  noticed was that the class names put both blocks on the same elements with
+  opposite intent.
+
+  Expected in the preview tool:
+    meta color-scheme .................. Found, content "light dark"
+    meta supported-color-schemes ....... Not found
+    color-scheme CSS property .......... Not found
+    @media (prefers-color-scheme: dark)  Found 2 blocks, 8 rules inside
+    Client-specific dark targeting ..... Not found
+
+  Two blocks must be reported separately. If they are merged into one, the
+  tool has lost the information that makes this diagnosable.
+
+  Expected on toggle:
+    - Page and card DO flip dark, so you can see the toggle is working.
+    - The logo does NOT swap. It still reads "LIGHT logo (should hide)".
+    - The body text stays dark green on the dark card, close to unreadable.
+
+  Why this file matters for the roadmap: a selector-match check, the feature
+  edge case 11 argues for, would NOT catch this. Every selector here matches
+  a real element. The rules are live, correct and mutually destructive. Only
+  looking at the rendered result finds it.
+
+  In the real email there was no surface flip at all, so the whole thing
+  looked identical light and dark. That version is harder to distinguish
+  from a broken tool, which is why the surfaces are allowed to flip here.
+-->
+
+<style>
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; }
+  img { border: 0; display: block; }
+  .h1 { font-size: 24px; line-height: 1.25; }
+  .body-text { font-size: 16px; line-height: 1.6; }
+  .footer-text { font-size: 13px; line-height: 1.5; }
+
+  /* BLOCK A, 5 rules. The .dark-img / .light-img convention. */
+  @media (prefers-color-scheme: dark) {
+    .page      { background-color: #14181a !important; }
+    .card      { background-color: #1e2427 !important; border-color: #38424a !important; }
+    .body-text { color: #dbe4e0 !important; }
+    .dark-img  { display: block !important; overflow: visible !important; max-height: inherit !important; }
+    .light-img { display: none !important; }
+  }
+
+  /* BLOCK B, 3 rules. The .darkmode_on / .darkmode_off convention, pasted in
+     from a different source. Lands on the same elements. Wins on source order. */
+  @media (prefers-color-scheme: dark) {
+    .darkmode_off { display: none !important; }
+    .darkmode_on  { display: block !important; }
+    .body-text    { color: #33403a !important; }
+  }
+</style>
+</head>
+<body class="page" style="margin:0; padding:0; background-color:#eef0ec;">
+
+<table role="presentation" class="page" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef0ec;">
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+
+      <table role="presentation" class="card" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#ffffff; border:1px solid #d4d8d2;">
+
+        <tr>
+          <td style="padding:24px 28px 8px 28px;">
+            <img class="light-img darkmode_on" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMjAnIGhlaWdodD0nNDQnPjxyZWN0IHdpZHRoPSczMjAnIGhlaWdodD0nNDQnIGZpbGw9JyNmZmZmZmYnLz48dGV4dCB4PScxMCcgeT0nMzAnIGZvbnQtZmFtaWx5PSdHZW9yZ2lhLHNlcmlmJyBmb250LXNpemU9JzIyJyBmaWxsPScjMmIzYTJmJz5MSUdIVCBsb2dvIChzaG91bGQgaGlkZSk8L3RleHQ+PC9zdmc+" alt="Riverbend Library" width="320" height="44">
+            <div class="dark-img darkmode_off" style="display:none; overflow:hidden; max-height:0;">
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMjAnIGhlaWdodD0nNDQnPjxyZWN0IHdpZHRoPSczMjAnIGhlaWdodD0nNDQnIGZpbGw9JyMxZTI0MjcnLz48dGV4dCB4PScxMCcgeT0nMzAnIGZvbnQtZmFtaWx5PSdHZW9yZ2lhLHNlcmlmJyBmb250LXNpemU9JzIyJyBmaWxsPScjZWVmM2YwJz5EQVJLIGxvZ28gKHNob3VsZCBzaG93KTwvdGV4dD48L3N2Zz4=" alt="Riverbend Library" width="320" height="44">
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:8px 28px 24px 28px; font-family:Georgia, serif;">
+            <p class="body-text" style="margin:0 0 16px 0; color:#33403a;">
+              The upstairs reading room reopens on the 22nd after six weeks of rewiring. The long
+              tables are back, the window seats are back, and the radiator that everybody complained
+              about has been replaced with something quieter.
+            </p>
+            <p class="body-text" style="margin:0 0 16px 0; color:#33403a;">
+              Our local history collection has finished being catalogued. Around four hundred items
+              that were previously request-only are now on open shelves at the back of the ground
+              floor.
+            </p>
+            <p class="body-text" style="margin:0; color:#33403a;">
+              Renewals can be done at the desk or over the phone. If your card expired during the
+              closure, we have already extended it by two months.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 28px; background-color:#f4f6f3; border-top:1px solid #d4d8d2; font-family:Georgia, serif;">
+            <p class="footer-text" style="margin:0; color:#5a6b5e;">
+              Riverbend Library, 14 Mill Street.
+              <a href="https://example.com/unsubscribe" style="color:#2b5f3f;">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
