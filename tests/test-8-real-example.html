@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing Support: Payment Declined</title>
+    <style>
+      body {
+        font-family: -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+        background-color: #f0f2f5;
+        margin: 0;
+        padding: 30px 15px;
+      } .email-container {
+        max-width: 550px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        border-top: 6px solid #FF4C4C;
+      } .header {
+        text-align: center;
+        padding: 30px 20px 10px;
+      } .header-title {
+        color: #FF4C4C;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      } .header h1 {
+        margin: 0;
+        font-size: 26px;
+        color: #111;
+      } .content {
+        padding: 20px 40px;
+        color: #444;
+        font-size: 15px;
+        line-height: 1.6;
+      } .alert-text {
+        background-color: #fff5f5;
+        border-left: 4px solid #FF4C4C;
+        padding: 15px 20px;
+        margin: 20px 0;
+        font-size: 14px;
+        color: #333;
+      } .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+      } .invoice-table td {
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+      } .invoice-table td:nth-child(2) {
+        text-align: right;
+        font-weight: bold;
+        color: #111;
+      } .btn-primary {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background-color: #FF4C4C;
+        color: #ffffff;
+        text-decoration: none;
+        padding: 16px 0;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        box-sizing: border-box;
+      } .btn-secondary {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background-color: #f4f4f4;
+        color: #333;
+        text-decoration: none;
+        padding: 16px 0;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        box-sizing: border-box;
+      } .footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 12px;
+        color: #999;
+        background-color: #fafafa;
+        border-top: 1px solid #eee;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        <div class="header-title">
+          Final Attempt
+        </div>
+        <h1>Your Payment Was Declined.</h1>
+      </div>
+      <div class="content">
+        <p>
+          Your antivirus & privacy protection's subscription payment has
+          <strong>FAILED more than 3 times</strong>
+          . We have attempted to renew your annual subscription using your default payment method, but the transaction was unsuccessful.
+        </p>
+        <div class="alert-text">
+          <strong>Warning:</strong>
+          Your device is currently exposed to hackers, scammers, data theft, and improper session handling.
+        </div>
+        <table class="invoice-table">
+          <tr>
+            <td>Service</td>
+            <td>Privacy Protection Pro</td>
+          </tr>
+          <tr>
+            <td>Status</td>
+            <td style="color: #FF4C4C;">Declined (3 Attempts)</td>
+          </tr>
+          <tr>
+            <td>Action Required</td>
+            <td>Update Billing Info</td>
+          </tr>
+        </table>
+        <p style="font-size: 13px; color: #666; text-align: center; margin-bottom: 25px;">
+          Failure to resolve this billing issue will result in a high risk of being hacked, data loss, and money loss.
+        </p>
+        <a href="#aaa" class="btn-primary">Secure My Account Now</a>
+        <a href="#aaa" class="btn-secondary">Update Billing</a>
+      </div>
+      <div class="footer">
+        <p>
+          Notification from Security Billing Center.
+          <br>
+          <p>
+            You can unsubscribe from such notifications at any time by clicking
+            <a href="#aaa">here.</a>
+          </p>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

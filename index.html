@@ -371,6 +371,17 @@ fieldset.group legend + * { clear: left; }
 
 .spacer { margin-left: auto; }
 
+.pane-width {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+.pane-width b {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 /* ---------- the callout ---------- */
 
 .dark-mode-callout {
@@ -560,6 +571,8 @@ iframe {
               <input type="checkbox" id="compare">
               <label for="compare">Compare side by side</label>
             </div>
+
+            <p class="pane-width">Pane width <b id="pane-width">&#8230;</b></p>
           </div>
 
           <div class="dark-mode-callout" id="notice" hidden>
@@ -598,6 +611,8 @@ iframe {
   var el = function (id) { return document.getElementById(id); };
 
   var DARK_COND = /prefers-color-scheme\s*:\s*dark/i;
+  var LIGHT_COND = /prefers-color-scheme\s*:\s*light/i;
+  var SCHEME_COND = /prefers-color-scheme\s*:\s*(dark|light)/i;
   var DARK_COND_FULL = /\(\s*prefers-color-scheme\s*:\s*dark\s*\)/gi;
 
   // Client-specific dark-mode hooks that are real declarations but can't be
@@ -611,8 +626,8 @@ iframe {
   ];
 
   var panes = {
-    a: { frame: el("frame-a"), well: el("well-a"), rules: [], forced: null },
-    b: { frame: el("frame-b"), well: el("well-b"), rules: [], forced: "dark" }
+    a: { frame: el("frame-a"), well: el("well-a"), rules: [], lightRules: [], forced: null },
+    b: { frame: el("frame-b"), well: el("well-b"), rules: [], lightRules: [], forced: "dark" }
   };
 
   var sourceName = "pasted HTML";
@@ -635,17 +650,39 @@ iframe {
     }).join(", ");
   }
 
-  function walkRules(rules, visit, inDark) {
+  /* ---------------------------------------------------------------
+     A light block must stop matching when the dark view is showing.
+     In a real client with a dark preference, prefers-color-scheme:
+     light simply does not match. Here the browser is still in light
+     mode, so without this the light and dark rules both apply at once
+     and source order picks the winner.
+     Per query: drop any query carrying the light condition. If every
+     query went, the block cannot match at all, which is "not all".
+  --------------------------------------------------------------- */
+  function suppressLight(mediaText) {
+    var kept = mediaText.split(",").map(function (q) { return q.trim(); })
+      .filter(function (q) { return q && !LIGHT_COND.test(q); });
+    return kept.length ? kept.join(", ") : "not all";
+  }
+
+  function walkRules(rules, visit, inScheme, context) {
     if (!rules) { return; }
     for (var i = 0; i < rules.length; i++) {
       var rule = rules[i];
-      visit(rule, inDark);
+      visit(rule, inScheme, context);
       var kids = null;
       try { kids = rule.cssRules; } catch (e) { kids = null; }
       if (kids) {
-        var isDark = !!(rule.media && typeof rule.media.mediaText === "string"
-                        && DARK_COND.test(rule.media.mediaText));
-        walkRules(kids, visit, inDark || isDark);
+        var cond = "";
+        if (rule.media && typeof rule.media.mediaText === "string") {
+          cond = "@media " + rule.media.mediaText;
+        } else if (typeof rule.conditionText === "string") {
+          cond = "@supports " + rule.conditionText;
+        }
+        var isScheme = !!(rule.media && typeof rule.media.mediaText === "string"
+                          && SCHEME_COND.test(rule.media.mediaText));
+        walkRules(kids, visit, inScheme || isScheme,
+                  cond ? (context ? context + " > " + cond : cond) : context);
       }
     }
   }
@@ -653,10 +690,23 @@ iframe {
   function collect(doc) {
     var found = {
       darkBlocks: [],
+      lightBlocks: [],
       colorSchemeDecls: [],
       clientHooks: {},
+      pictureSources: [],
       unreadableSheets: 0
     };
+
+    // <picture><source media="(prefers-color-scheme: dark)"> is an HTML
+    // attribute, not a stylesheet rule, so it never reaches styleSheets and
+    // the media rewrite cannot touch it. Report it rather than stay silent.
+    try {
+      var srcs = doc.querySelectorAll("source[media]");
+      for (var p = 0; p < srcs.length; p++) {
+        var mq = srcs[p].getAttribute("media") || "";
+        if (SCHEME_COND.test(mq)) { found.pictureSources.push(mq); }
+      }
+    } catch (e) { /* nothing to do */ }
 
     var sheets = doc.styleSheets;
     for (var s = 0; s < sheets.length; s++) {
@@ -664,16 +714,22 @@ iframe {
       try { rules = sheets[s].cssRules; }
       catch (e) { found.unreadableSheets++; continue; }
 
-      walkRules(rules, function (rule, inDark) {
-        if (rule.media && typeof rule.media.mediaText === "string" && DARK_COND.test(rule.media.mediaText)) {
+      walkRules(rules, function (rule, inScheme, context) {
+        if (rule.media && typeof rule.media.mediaText === "string") {
+          var mt = rule.media.mediaText;
           var count = 0;
           try { count = rule.cssRules ? rule.cssRules.length : 0; } catch (e2) { count = 0; }
-          found.darkBlocks.push({
-            rule: rule,
-            original: rule.media.mediaText,
-            condition: rule.media.mediaText,
-            count: count
-          });
+          if (DARK_COND.test(mt)) {
+            found.darkBlocks.push({
+              rule: rule, original: mt, condition: mt,
+              count: count, context: context || ""
+            });
+          } else if (LIGHT_COND.test(mt)) {
+            found.lightBlocks.push({
+              rule: rule, original: mt, condition: mt,
+              count: count, context: context || ""
+            });
+          }
         }
 
         if (rule.style && rule.style.colorScheme) {
@@ -686,7 +742,7 @@ iframe {
         // selector like .darkmode sitting inside @media (prefers-color-scheme:
         // dark) is part of the media-query strategy, not a client hook, and
         // counting it in both places reports the same rule twice.
-        if (rule.selectorText && !inDark) {
+        if (rule.selectorText && !inScheme) {
           for (var h = 0; h < CLIENT_HOOKS.length; h++) {
             var hook = CLIENT_HOOKS[h];
             if (hook.test.test(rule.selectorText)) {
@@ -697,7 +753,7 @@ iframe {
             }
           }
         }
-      });
+      }, false, "");
     }
     return found;
   }
@@ -708,6 +764,25 @@ iframe {
         entry.rule.media.mediaText = on ? flipCondition(entry.original) : entry.original;
       } catch (e) { /* some engines refuse the write; leave the rule alone */ }
     });
+    pane.lightRules.forEach(function (entry) {
+      try {
+        entry.rule.media.mediaText = on ? suppressLight(entry.original) : entry.original;
+      } catch (e) { /* as above */ }
+    });
+  }
+
+  /* ---------------------------------------------------------------
+     Dark CSS inside a downlevel-hidden conditional comment is never
+     parsed by a browser, so it cannot appear in styleSheets. Scan the
+     raw source instead. Anchored to a conditional marker so ordinary
+     documentation comments that merely mention the feature are ignored.
+  --------------------------------------------------------------- */
+  function scanHiddenBlocks(raw) {
+    var re = /<!--([\s\S]*?)-->/g, m, n = 0;
+    while ((m = re.exec(raw)) !== null) {
+      if (/\[if\b/i.test(m[1]) && SCHEME_COND.test(m[1])) { n++; }
+    }
+    return n;
   }
 
   /* ---------------------------------------------------------------
@@ -731,7 +806,29 @@ iframe {
     return html + "</div>";
   }
 
-  function renderFindings(metaScheme, metaSupported, found) {
+  function conditionLine(b) {
+    return "@media " + b.condition + (b.context ? "   nested in " + b.context : "");
+  }
+
+  // A real template can carry fifty identical conditions. Listing each one
+  // buries everything below it, so collapse duplicates and show a count.
+  function tally(items, cap) {
+    var order = [], counts = {};
+    items.forEach(function (t) {
+      if (counts[t] === undefined) { counts[t] = 0; order.push(t); }
+      counts[t]++;
+    });
+    var out = order.slice(0, cap).map(function (t) {
+      return counts[t] > 1 ? t + "   \u00d7 " + counts[t] : t;
+    });
+    if (order.length > cap) {
+      out.push("and " + (order.length - cap) + " more distinct condition"
+               + (order.length - cap === 1 ? "" : "s"));
+    }
+    return out;
+  }
+
+  function renderFindings(metaScheme, metaSupported, found, hiddenCount) {
     var out = "";
 
     out += finding(
@@ -757,7 +854,7 @@ iframe {
       found.colorSchemeDecls.length
         ? "Found in <b>" + found.colorSchemeDecls.length + "</b> rule" + (found.colorSchemeDecls.length === 1 ? "" : "s")
         : "Not found",
-      found.colorSchemeDecls.slice(0, 6),
+      tally(found.colorSchemeDecls, 6),
       null
     );
 
@@ -769,8 +866,22 @@ iframe {
         ? "Found <b>" + blocks.length + "</b> block" + (blocks.length === 1 ? "" : "s") +
           ", <b>" + ruleCount + "</b> rule" + (ruleCount === 1 ? "" : "s") + " inside"
         : "Not found",
-      blocks.map(function (b) { return "@media " + b.condition; }),
+      tally(blocks.map(conditionLine), 8),
       blocks.length ? "This is the only thing that changes the dark view." : null
+    );
+
+    var lb = found.lightBlocks;
+    var lbRules = lb.reduce(function (n, b) { return n + b.count; }, 0);
+    out += finding(
+      "@media (prefers-color-scheme: light)",
+      lb.length
+        ? "Found <b>" + lb.length + "</b> block" + (lb.length === 1 ? "" : "s") +
+          ", <b>" + lbRules + "</b> rule" + (lbRules === 1 ? "" : "s") + " inside"
+        : "Not found",
+      tally(lb.map(conditionLine), 8),
+      lb.length
+        ? "Switched off while the dark view is showing, because a light block does not match in a client set to dark."
+        : null
     );
 
     var hookLabels = Object.keys(found.clientHooks);
@@ -785,6 +896,28 @@ iframe {
       }),
       hookLabels.length
         ? "Declared, but not previewable here. These depend on the client injecting an attribute the browser never adds, so treat this as dark-mode work that exists even though the dark view will not show it."
+        : null
+    );
+
+    out += finding(
+      "<picture> dark-mode sources",
+      found.pictureSources.length
+        ? "Found <b>" + found.pictureSources.length + "</b>"
+        : "Not found",
+      tally(found.pictureSources, 4),
+      found.pictureSources.length
+        ? "Declared, but not previewable here. These sit on an HTML attribute rather than in a stylesheet, so the media switch cannot reach them. Images swapped this way will not change in the dark view."
+        : null
+    );
+
+    out += finding(
+      "Dark CSS inside conditional comments",
+      hiddenCount
+        ? "Found <b>" + hiddenCount + "</b> comment" + (hiddenCount === 1 ? "" : "s")
+        : "Not found",
+      null,
+      hiddenCount
+        ? "Declared, but not parsed. A browser treats a downlevel-hidden conditional comment as an ordinary comment, so any CSS inside it never exists. The block counts above do not include it."
         : null
     );
 
@@ -808,11 +941,17 @@ iframe {
     return checked ? checked.value : "wfull";
   }
 
+  function updatePaneWidth() {
+    var w = Math.round(panes.a.frame.getBoundingClientRect().width);
+    el("pane-width").textContent = w ? w + "px" : "\u2026";
+  }
+
   function setWidth() {
     var cls = currentWidthClass();
     [panes.a.well, panes.b.well].forEach(function (well) {
       well.className = "frame-well" + (cls === "wfull" ? "" : " " + cls);
     });
+    updatePaneWidth();
   }
 
   function setView(mode) {
@@ -842,12 +981,14 @@ iframe {
 
   function loadPane(pane, html, onReady) {
     pane.rules = [];
+    pane.lightRules = [];
     pane.frame.onload = function () {
       var doc = pane.frame.contentDocument;
       var found = null;
       if (doc) {
         found = collect(doc);
         pane.rules = found.darkBlocks;
+        pane.lightRules = found.lightBlocks;
         if (pane.forced === "dark") { applyDark(pane, true); }
       }
       if (onReady) { onReady(found); }
@@ -863,6 +1004,7 @@ iframe {
       return;
     }
     el("error").hidden = true;
+    var hiddenCount = scanHiddenBlocks(trimmed);
 
     // Meta tags come from the raw source, before the browser has a chance to
     // move anything around.
@@ -892,9 +1034,13 @@ iframe {
         el("error").textContent = "The preview could not be read. Try reloading the page.";
         return;
       }
-      renderFindings(metaScheme, metaSupported, found);
+      renderFindings(metaScheme, metaSupported, found, hiddenCount);
+      updatePaneWidth();
 
       var hasDark = found.darkBlocks.length > 0;
+      var otherWork = Object.keys(found.clientHooks).length > 0
+                      || found.pictureSources.length > 0
+                      || hiddenCount > 0;
       el("view-dark").disabled = !hasDark;
       el("compare").disabled = !hasDark;
       el("notice").hidden = hasDark;
@@ -903,7 +1049,10 @@ iframe {
         el("notice-text").innerHTML =
           "<strong>No dark-mode CSS found.</strong> There is nothing to apply, so this shows the " +
           "email exactly as authored. Real email clients may still auto-darken it in ways this " +
-          "tool cannot predict or replicate, and none of them share a common, documented approach.";
+          "tool cannot predict or replicate, and none of them share a common, documented approach." +
+          (otherWork
+            ? " Dark-mode work was declared in a form this tool cannot preview. See the panel."
+            : "");
       } else {
         loadPane(panes.b, trimmed, null);
       }
@@ -965,7 +1114,12 @@ iframe {
     r.addEventListener("change", setWidth);
   });
 
-  el("compare").addEventListener("change", function () { setCompare(el("compare").checked); });
+  el("compare").addEventListener("change", function () {
+    setCompare(el("compare").checked);
+    updatePaneWidth();
+  });
+
+  window.addEventListener("resize", updatePaneWidth);
 
   el("source").addEventListener("keydown", function (e) {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { run(el("source").value); }

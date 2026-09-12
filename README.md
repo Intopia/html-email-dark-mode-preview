@@ -1,196 +1,131 @@
 # HTML email dark mode preview
 
-A single-page tool that shows what dark-mode support an HTML email declares, and what that email's own dark-mode CSS actually produces when it is switched on.
+A single-page tool that shows what dark-mode support an HTML email declares, and what its own dark-mode CSS actually produces when switched on.
 
-It is a viewer, not a test. Nothing in it passes or fails, and it makes no claim about how any particular email client will render the email.
-
-https://intopia.github.io/html-email-dark-mode-preview/
+It is a viewer, not a test. Nothing passes or fails, and it makes no claim about how any particular email client will render the email.
 
 ---
 
 ## Purpose
 
-The question this tool answers is not "does dark mode work". It is **did the team declare dark-mode support at all, and if so, what does it produce**.
+The question is not "does dark mode work". It is **did the team declare dark-mode support at all, and if so, what does it produce**.
 
-For a lot of teams the honest answer is "we never thought about it". Showing that plainly is a legitimate wake-up call on its own. The tool does not need to judge success to be useful. It needs to make an invisible gap visible.
-
-This matters in two settings:
-
-- **Auditing.** Dark mode is a real accessibility concern and it is routinely skipped. A one-line finding backed by a screenshot is more persuasive than a paragraph of explanation.
-- **Training.** Flipping a real email between its light and dark states in front of a room makes the point faster than any slide.
-
-## What this tool is not
-
-- Not a test. No badges, no pass/fail, no scoring vocabulary, no summary count.
-- Not part of the HTML email accessibility tester. Separate tool, separate file, no shared code.
-- Not a prediction of any email client's rendering. It shows the author's CSS, not Gmail's or Outlook's interpretation of it.
-
----
+For a lot of teams the honest answer is "we never thought about it". Showing that plainly is a legitimate finding on its own. The tool does not need to judge success to be useful; it needs to make an invisible gap visible.
 
 ## Scope
 
-**Input is HTML email only.** No URL or general webpage input, and that restriction is deliberate rather than a shortcut.
+**HTML email only.** Not a general web page previewer.
 
-General web dark mode has a failure mode this tool cannot have. Plenty of sites implement dark mode with a JavaScript toggle and `localStorage` rather than the CSS media query. Those sites appear to do nothing under any `prefers-color-scheme` emulation, which is confusing and not fixable, because a preview tool has no way to trigger a JavaScript toggle it does not know exists.
+General web dark mode is often implemented with a JavaScript toggle and `localStorage` rather than the CSS media query, which no preview tool can trigger. Email cannot have that problem: email clients never execute JavaScript, so every client's dark mode is built on static CSS.
 
-Email cannot have this problem. **Email clients never execute JavaScript**, so every client's dark mode is necessarily built on static CSS. That is not just a smaller scope, it is a more reliable one.
-
-### Why email makes the extraction faithful
-
-Almost every email client strips or ignores `<link rel="stylesheet">`, so real-world email HTML is forced to carry all of its CSS either inline or in a `<style>` block in the head. That is a structural fact about how email has to be built, not a convenient assumption.
-
-It means whatever HTML this tool receives already contains every rule that will ever apply. Nothing external to fetch, nothing that could silently fail to load, nothing hidden from view.
+Email also carries all of its CSS inline or in a `<style>` block, because clients strip `<link rel="stylesheet">`. Whatever HTML the tool receives already contains every rule that will ever apply.
 
 ---
 
 ## How the dark view works
 
-This is the part most likely to be misunderstood, including by a future version of this document.
+It does **not** force a browser preference, and it does **not** copy rules out of the media query. It switches the author's existing query on, in place.
 
-The tool does **not** force a browser preference, and it does **not** copy rules out of the media query and paste them somewhere else. It switches the author's existing media query on, in place.
-
-### The mechanism
-
-1. The email HTML is rendered in an iframe via `srcdoc`. This is the "as authored" view, unmodified.
-2. Because a `srcdoc` iframe is same-origin, the tool can read `iframe.contentDocument.styleSheets`.
-3. It walks every rule recursively, looking for any `CSSMediaRule` whose `conditionText` mentions `prefers-color-scheme: dark`. The original `mediaText` string is stored against the rule.
-4. To switch to dark, it rewrites `rule.media.mediaText`, removing only the `prefers-color-scheme: dark` condition and leaving everything else in the query intact.
-5. To switch back, it restores the stored original string.
+1. The email renders in a `srcdoc` iframe. That is the "as authored" view.
+2. Because the iframe is same-origin, the tool reads `iframe.contentDocument.styleSheets`.
+3. It walks every rule recursively, finds each `CSSMediaRule` mentioning `prefers-color-scheme: dark`, and stores its original `mediaText`.
+4. To go dark, it rewrites `mediaText` to remove only the `prefers-color-scheme` condition, per query. To go back, it restores the stored string.
+5. At the same time, `prefers-color-scheme: light` blocks are **suppressed**, because in a client set to dark they would not match at all.
 
 ### Why this approach
 
-**No CSS parsing.** The browser has already parsed the stylesheet correctly. Working on the normalised `conditionText` means no regex against raw CSS, no brace counting, and no failures on nested blocks.
+**No CSS parsing.** The browser already parsed it. Working on the normalised `conditionText` means no regex over raw CSS and no brace counting.
 
-**The cascade is preserved exactly.** The rules never move. This matters more than it sounds, because email CSS is overwhelmingly inline, and an inline `style` attribute beats any stylesheet rule regardless of source order. Real dark-mode email CSS therefore has to use `!important` to win. Leaving the rules where the author put them reproduces the cascade a real client would face. Extracting the rules and appending them as a new stylesheet would promote them by source order, which can make a rule win here that would lose in a real client. That is a small dishonesty that would never be visible.
+**The cascade is preserved.** Rules never move. Email CSS is overwhelmingly inline, and an inline `style` attribute beats any stylesheet rule regardless of source order, so real dark-mode CSS has to use `!important`. Leaving rules in place reproduces the cascade a real client faces. Extracting and appending them would promote them by source order and could make a rule win here that would lose in a client.
 
-**Compound conditions survive.** `@media (prefers-color-scheme: dark) and (max-width: 600px)` becomes `(max-width: 600px)`, so it still only applies at narrow widths. Flattening it to `all` would show a dark state that no client would ever produce.
+**Compound conditions survive.** `@media (prefers-color-scheme: dark) and (max-width: 600px)` becomes `(max-width: 600px)`, so it still only applies at narrow widths.
 
-### Alternatives considered
+**Light blocks are handled too.** Without suppressing them, light and dark rules apply simultaneously and source order picks the winner. A real email was found where the image swap worked only because its light block happened to come first.
 
-**Native `color-scheme` propagation.** Setting `color-scheme: dark` on the iframe element genuinely makes `prefers-color-scheme: dark` match inside the embedded document. It is real preference propagation, not emulation, and it is supported in Chromium and in Firefox 105 and later.
+### Alternative considered
 
-It was not used as the primary mechanism for two reasons. Safari does not implement it and resolves the query against the system setting instead, which would make the tool behave differently for different people on the team. And it also changes the default canvas and system colours, so an email with no dark CSS at all would still shift appearance, which undermines the whole point of the "nothing was declared" state.
-
-**Regex extraction and re-injection.** Rejected for the cascade and parsing reasons above.
+Setting `color-scheme: dark` on the iframe genuinely makes `prefers-color-scheme: dark` match inside it, in Chromium and Firefox 105+. Rejected because Safari does not implement it, and because it also shifts the default canvas, so an email with no dark CSS would still change appearance, undermining the point of the "nothing declared" state.
 
 ---
 
-## What it detects
+## What it reports
 
-Five things, reported independently, because they are diagnostically interesting on their own rather than as a single yes/no.
+Eight findings, independently:
 
-| Reported | Read from |
+| Reported | Source |
 |---|---|
-| `<meta name="color-scheme">` | the raw source via `DOMParser` |
-| `<meta name="supported-color-schemes">` | the raw source via `DOMParser` |
-| `color-scheme` CSS property | CSSOM, any rule with `style.colorScheme` set |
-| `@media (prefers-color-scheme: dark)` blocks | CSSOM, with each condition listed |
-| Client-specific dark targeting | CSSOM, matched against `selectorText` |
+| `<meta name="color-scheme">` | raw source via `DOMParser` |
+| `<meta name="supported-color-schemes">` | raw source via `DOMParser` |
+| `color-scheme` CSS property | CSSOM |
+| `@media (prefers-color-scheme: dark)` blocks | CSSOM, with conditions and nesting context |
+| `@media (prefers-color-scheme: light)` blocks | CSSOM |
+| Client-specific dark targeting | CSSOM selectors |
+| `<picture>` dark-mode sources | `source[media]` in the iframe document |
+| Dark CSS inside conditional comments | raw source scan |
 
-Meta tags are read from the raw source rather than the rendered document, so nothing is missed if the browser relocates head content during parsing.
+Condition lists are deduplicated with counts, since a real template can repeat one condition across fifty blocks.
 
-### The two meta tags change nothing here
+### The meta tags change nothing here
 
-Both are signals to email clients' own proprietary auto-dark systems, broadly meaning "respect my CSS, do not auto-invert me". Neither has any effect on how a browser renders the page. Only the `@media` block changes what this tool shows.
+Both are signals to email clients' own auto-dark systems. Neither affects browser rendering. They are reported anyway, because an email with the meta tags but no dark CSS, or the reverse, is exactly the gap worth surfacing.
 
-They are reported anyway. An email with the meta tags but no dark CSS, or the reverse, is exactly the kind of gap worth surfacing.
+### Declared but not previewable
 
-### Client-specific targeting, and why it is there
+Three mechanisms are reported and cannot be rendered, all for the same reason: a browser cannot act on them.
 
-This check was added after the first build, and it fixes the tool's worst possible error.
+- **Client hooks.** `[data-ogsc]`, `[data-ogsb]` and similar depend on the client injecting an attribute the browser never adds.
+- **`<picture>` with `source media`.** An HTML attribute, not a stylesheet rule, so the media rewrite cannot reach it.
+- **Dark CSS in downlevel-hidden conditional comments.** A browser treats these as ordinary comments, so the CSS never exists. Block counts exclude it.
 
-Several clients implement dark mode by injecting an attribute into the email rather than honouring the media query. Outlook.com adds `data-ogsc` and `data-ogsb`, and various build tools use `.dark-mode` or `data-darkmode` hooks. An email can have substantial, deliberate dark-mode work done entirely through those selectors.
+Reporting these matters. Without the first, an email with real Outlook dark-mode work would be reported as having none, which is the worst error the tool could make.
 
-Without this check, such an email would be reported as having no dark-mode CSS at all. Telling a team they never thought about dark mode when they did is the one error that would burn the tool's credibility, so these are detected and reported honestly as declared but not previewable.
+### When nothing is found
 
-### The no dark CSS message
-
-When no `@media (prefers-color-scheme: dark)` block is found, the dark radio and the compare checkbox both disable, and this takes their place:
-
-> **No dark-mode CSS found.** There is nothing to apply, so this shows the email exactly as authored. Real email clients may still auto-darken it in ways this tool cannot predict or replicate, and none of them share a common, documented approach.
-
-The control never sits in a dead state where clicking it does nothing. The absence of a difference must never be mistaken for a guarantee of anything, which is the same honesty principle the accessibility tester was built on.
-
----
-
-## Interface decisions
-
-**Single pane with a toggle, not permanent side by side.** Because the dark state is a `mediaText` flip, toggling is instant and preserves scroll position. Swapping the same pixels in place is perceptually stronger than comparing two panes, where the eye has to jump between positions and subtle colour changes get lost. It also gives the email full width, which removes the need for zoom and scroll syncing.
-
-**Side by side survives as a compare mode.** Reports do read better with the juxtaposition in one image, so it is available as a checkbox rather than the default working view. It uses a second iframe, loaded only when dark CSS was actually found.
-
-**Width control at 375, 600 and full.** Not decoration. Dark rules gated behind a compound condition such as `and (max-width: 600px)` will appear to do nothing at full width, and without this control that looks like a tool bug rather than an email behaviour.
-
-**Two views, not one long page.** Intake first, then results. Matches the pattern of the HTML email accessibility tester and the EML converter.
+The dark radio and compare checkbox both disable, and a callout takes their place saying there is nothing to apply and that real clients may still auto-darken the email unpredictably. The control never sits in a dead state. If non-previewable work was declared, the callout says so.
 
 ---
 
-## Accessibility decisions
+## Interface
 
-The tool is built by an accessibility team, so these are not incidental.
+**Single pane with a toggle.** The flip is instant and preserves scroll position. Swapping the same pixels in place reads more clearly than comparing two panes.
 
-**No change of context on input (WCAG 3.2.2).** Choosing a file loads the source into the textarea and stops. A `role="status"` message confirms what was loaded and directs the person to the "Show preview" button. Selecting a file never moves anyone to a new view on its own.
+**Side by side** is available as a compare checkbox for report screenshots.
 
-**Focus moves on submission.** Focus goes to the "Preview" heading, which carries `tabindex="-1"`. Returning via "Load a different email" sends focus back to the textarea.
-
-**The focus ring on that heading needed an explicit rule.** Programmatic focus on a `tabindex="-1"` element does not match `:focus-visible`, so the global `:focus:not(:focus-visible) { outline: none }` was stripping it. Focus was moving silently, which is worse than not moving it. `.workbar h2:focus` at specificity 0,2,1 restores the ring over the 0,2,0 global rule.
-
-**Native controls throughout.** The view and width switchers are real radio groups in fieldsets with legends, visually styled as segments. The compare control is a real checkbox. Nothing is a div pretending to be a control.
-
-**Live region.** View changes happen inside an iframe where the visual change is invisible to a screen reader, so a `role="status"` region announces which view is showing.
-
-**No colour-only meaning.** Findings are reported in words. There is no green or red anywhere, which is also consistent with the tool not scoring anything.
+**Width control** at 375, 600 and full, because dark rules gated behind a breakpoint would otherwise appear to do nothing. The live pane width is shown in the toolbar, since "full" means the width of the preview pane and not the window.
 
 ---
 
-## Build details
+## Accessibility
 
-Single self-contained HTML file. No build step, no framework, no npm. Open it locally or drop it on a server.
-
-**External dependencies:** the Intopia logo, the favicon, and a Google Fonts import for Space Grotesk, IBM Plex Sans and IBM Plex Mono. All three token values carry fallbacks, so the tool degrades rather than breaks without a connection, but it will not look right offline. This matches the tester.
-
-**Iframe sandbox:** `sandbox="allow-same-origin"` with no `allow-scripts`. Scripts cannot run in the preview, which matches every email client and enforces the property the whole scope rests on. `allow-same-origin` is what keeps CSSOM access working, so both attributes are load-bearing.
-
-**Browser support:** anything current. The only unusual API is writing to `CSSMediaRule.media.mediaText`, which is wrapped in try/catch. If a rule ever silently fails to flip, that is the first place to look.
-
-### A CSS trap worth remembering
-
-`[hidden] { display: none !important; }` is in the stylesheet deliberately. The `hidden` attribute only gets `display: none` from the browser's own stylesheet, so any author rule such as `.workbench { display: grid }` or `.notice { display: flex }` beats it and the element stays visible.
-
-This bit the first build in three places at once, and it fails quietly because the page still looks plausible. If something will not hide, check this first.
+- **No change of context on input.** Choosing a file loads it into the textarea and stops. A `role="status"` message confirms what loaded and points at the Show preview button.
+- **Focus moves on submission** to the "Preview" heading, which carries `tabindex="-1"`. Programmatic focus does not match `:focus-visible`, so an explicit rule restores the ring; without it focus moved silently.
+- **Native controls throughout.** Real radio groups in fieldsets, a real checkbox. Nothing is a div pretending to be a control.
+- **Live region** announces view changes, since the visual change happens inside an iframe.
+- **No colour-only meaning.** Findings are reported in words, with no green or red anywhere.
 
 ---
 
-## Test files
+## Build notes
 
-Three versions of the same fictional library email, text and background colours only, no images.
+Single self-contained HTML file. No build step, no framework.
 
-**`test-1-no-dark-mode.html`** — no meta tags, no `color-scheme` property, no media query. Everything should report not found, both controls should disable, and the callout should appear.
+**External dependencies:** the Intopia logo, favicon, and a Google Fonts import. All font tokens carry fallbacks, so it degrades rather than breaks offline.
 
-**`test-2-full-dark-mode.html`** — both meta tags, `:root { color-scheme: light dark }`, and one media block that recolours all ten surfaces with `!important` throughout. All five findings report found and the toggle flips cleanly.
+**Iframe sandbox:** `sandbox="allow-same-origin"` with no `allow-scripts`. Scripts cannot run in the preview, matching every email client. `allow-same-origin` is what keeps CSSOM access working, so both are load-bearing.
 
-**`test-3-partial-dark-mode.html`** — declares intent, then half delivers, in four specific ways:
-
-- the `.h1` rule deliberately omits `!important`, so the inline colour wins and the heading stays dark on a dark card
-- the button background flips but the label colour is never touched
-- the footer is never targeted and keeps its light band
-- a promo strip sits behind `@media (prefers-color-scheme: dark) and (max-width: 600px)`, so it only darkens at 375 or 600
-
-It also carries `[data-ogsc]` and `[data-ogsb]` rules, so the client-hook finding fires.
-
-If `.h1` in test 3 ever does flip to light green, the `mediaText` rewrite is changing cascade position and something is wrong.
+**A CSS trap worth remembering.** `[hidden] { display: none !important; }` is in the stylesheet deliberately. The `hidden` attribute only gets `display: none` from the browser's own stylesheet, so any author rule such as `display: grid` beats it and the element stays visible. This bit the first build in three places and failed quietly.
 
 ---
+
+## Testing
+
+See `TEST-CORPUS.md`. Fifteen synthetic files, each isolating one mechanism, plus notes on the real emails worth keeping as fixtures.
+
+Two bugs were found by running that corpus and real emails against it: a client-hook false positive, and light blocks never being suppressed.
 
 ## Known limitations
 
-- **Remote images load.** Tracking pixels in a client's real email will fire from whoever is running the preview. Worth knowing before pasting a client's newsletter.
-- **Client-specific dark modes cannot be shown**, only reported, because they depend on an attribute the browser never adds.
-- **External stylesheets cannot be read.** `cssRules` throws on cross-origin sheets. This is caught and surfaced as its own finding, which is useful in itself since real clients strip those anyway.
-- **No prediction of auto-darkening.** Clients that invert emails do so with undocumented, inconsistent heuristics. The tool says so rather than guessing.
-
-## Worth testing before wider use
-
-Real `.eml` files converted through the EML converter, rather than only hand-written HTML. Quoted-printable soft line breaks can split a declaration across lines, and if `prefers-color-scheme` arrives with a `=` and a newline through the middle of it, the browser will not parse the block and detection reports nothing found.
-
-That false negative looks identical to an email that genuinely has no dark mode. Running two or three emails through both paths, converted and hand-extracted, gives a control. If they differ, the fix belongs in the converter rather than here.
+- **Remote images load.** Tracking pixels in a client's real email will fire from whoever runs the preview.
+- **No prediction of auto-darkening.** Clients that invert emails use undocumented, inconsistent heuristics. The tool says so rather than guessing.
+- **External stylesheets cannot be read.** Caught and surfaced as its own finding, which is useful since real clients strip them anyway.
+- **`.eml` conversion.** Quoted-printable soft line breaks can split a declaration across lines. If the converter fails to rejoin them the block is dropped and the tool honestly reports nothing found, which looks identical to an email that has none. Edge case 15 tests this specifically.

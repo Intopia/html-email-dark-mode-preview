@@ -173,20 +173,30 @@ A failure here is a converter problem, not a preview tool problem. The distincti
 
 ---
 
-## Known limitations the corpus exposes
+## What the run changed in the tool
 
-Three ways of declaring dark mode that a browser cannot act on, handled inconsistently:
+Every issue below was found by running this corpus, or by the one real email that followed it. All are fixed.
 
-- **Client hooks** (03) are reported as declared but not previewable.
-- **MSO conditional blocks** (06) are silently absent.
-- **`<picture>` with `source media`** (04) is silently absent.
+- **Client-hook false positive** (found by 11). `.darkmode` sitting inside a dark media block was reported both as a rule in that block and as a client hook. Hooks are now only matched outside `prefers-color-scheme` blocks.
+- **Light blocks were never switched off** (found by a real email). `@media (prefers-color-scheme: light)` still matched while the dark view was showing, so light and dark rules applied together and source order picked the winner. Light blocks are now suppressed in the dark view and restored on the way back.
+- **Two silent gaps closed.** Dark CSS in downlevel-hidden conditional comments (06) and `<picture>` with `source media` (04) are now reported as declared but not previewable, the same way client hooks already were.
+- **Nesting context** now appears in the conditions list, so a block inside `@media print` is visibly distinguishable.
+- **Condition lists are deduplicated** with counts. A real template showed 52 identical lines; it now shows one line with a count.
+- **Pane width** is shown live in the toolbar. "Full" means the width of the preview pane, not the window, and on a laptop it can land under 601px, which silently stops desktop breakpoints firing. This cost three test runs on 13 before it was diagnosed.
 
-Both gaps are cheap to close: a raw-source scan for `prefers-color-scheme` inside HTML comments, and `querySelectorAll('source[media*="prefers-color-scheme"]')` on the iframe document.
+## Remaining limitations, by design
 
-Two open questions:
+- `<picture>` swaps and MSO-hidden blocks are reported but cannot be rendered. A browser cannot act on either.
+- Client hooks cannot be rendered, since the attribute is injected by the client.
 
-- **"Full" width** means the width of the preview pane, not the window. With the findings panel taking 380px it can land under 601px on a laptop, so desktop breakpoints silently never fire. Showing the actual pane width in the toolbar would make this self-diagnosing.
-- **Nesting context** is not shown in the conditions list. In 13 all five blocks list identically as `(prefers-color-scheme: dark)`, so there is no way to tell that one of them sits inside `@media print` and can never apply on screen.
+## Real specimens worth keeping alongside these
+
+Synthetic files only test what you thought of. Real emails found two of the issues above. Worth keeping as fixtures:
+
+- An email doing dark mode properly across four mechanisms at once: 52 dark blocks, 4 light blocks, 114 Outlook hook rules, and 18 matched `<picture>` pairs.
+- One where two dark blocks cancel out on source order, which 12 reconstructs.
+- One where the background rule targets a class never applied to the markup, which 11 reconstructs.
+- Emails with no dark CSS that still render dark, because the client auto-inverted them. These are the proof that absence of dark CSS does not mean the email renders light.
 
 ---
 
